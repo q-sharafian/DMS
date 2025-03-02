@@ -3,7 +3,6 @@ package main
 import (
 	"DMS/internal/dal"
 	"DMS/internal/db"
-	repo "DMS/internal/repository"
 )
 
 func main() {
@@ -16,5 +15,4 @@ func main() {
 		DB:       "DMS",
 	}
 	dall := dal.NewPostgresDAL(psqlConnDetails)
-	repo.NewRepository(dall)
 }
