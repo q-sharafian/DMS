@@ -1,20 +1,15 @@
 package dal
 
-import "DMS/internal/db"
-
-// Representation of user entity
-type user struct {
-	ID          ID
-	Name        string
-	PhoneNumber string
-	// value 0 means it's not disabled and value 1 means it's disabled.
-	IsDisabled  uint8
-	CreatedByID ID
-}
+import (
+	"DMS/internal/db"
+	m "DMS/internal/models"
+)
 
 type UserDAL interface {
 	CreateUser(name, phoneNumber string) error
-	GetUserByID(id int) (*user, error)
+	GetUserByID(id m.ID) (*m.User, error)
+	// Returns true if the user is disabled.
+	IsDisabledByID(id m.ID) (bool, error)
 }
 
 // It's an implementation of UserDAL interface
@@ -30,6 +25,11 @@ func (d *psqlUserDAL) CreateUser(name, phoneNumber string) error {
 	return nil
 }
 
-func (d *psqlUserDAL) GetUserByID(id int) (*user, error) {
+func (d *psqlUserDAL) GetUserByID(id int) (*m.User, error) {
 	return nil, nil
+}
+
+// TODO: Complete it
+func (d *psqlUserDAL) IsDisabledByID(id m.ID) (bool, error) {
+	return false, nil
 }

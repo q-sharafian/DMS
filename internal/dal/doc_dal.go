@@ -1,17 +1,9 @@
 package dal
 
-import "DMS/internal/db"
-
-// Representation of a document entity
-type Doc struct {
-	ID        ID
-	CreatedBy ID
-	// The event the document is for that
-	AtEvent ID
-	Context string
-	// Contains path of multimedia files in the document. (If there's in the document)
-	Paths []MediaPath
-}
+import (
+	"DMS/internal/db"
+	"DMS/internal/models"
+)
 
 type MediaPath struct {
 	Type MediaType
@@ -30,11 +22,11 @@ const (
 )
 
 type DocDAL interface {
-	CreateDoc(doc *Doc) error
-	GetLastDocByUserID(id int) (*Doc, error)
+	CreateDoc(doc *models.Doc) error
+	GetLastDocByUserID(id int) (*models.Doc, error)
 	// Get latest created document of event with event_id by user_id. Then return that
 	// document together with the name of event and user.
-	GetLastEventDocByUserID(event_id ID, user_id ID) (doc *Doc, event_name string, user_name string, err error)
+	GetLastEventDocByUserID(event_id models.ID, user_id models.ID) (doc *models.Doc, event_name string, user_name string, err error)
 }
 
 // It's an implementaion of DocDAL interface
@@ -46,14 +38,14 @@ func newPsqlDocDAL(db *db.PSQLDB) *psqlDocDAL {
 	return &psqlDocDAL{db}
 }
 
-func (d *psqlDocDAL) CreateDoc(doc *Doc) error {
+func (d *psqlDocDAL) CreateDoc(doc *models.Doc) error {
 	return nil
 }
 
-func (d *psqlDocDAL) GetLastDocByUserID(id int) (*Doc, error) {
+func (d *psqlDocDAL) GetLastDocByUserID(id int) (*models.Doc, error) {
 	return nil, nil
 }
 
-func (d *psqlDocDAL) GetLastEventDocByUserID(event_id ID, user_id ID) (doc *Doc, event_name string, user_name string, err error) {
+func (d *psqlDocDAL) GetLastEventDocByUserID(event_id models.ID, user_id models.ID) (doc *models.Doc, event_name string, user_name string, err error) {
 	return nil, "", "", nil
 }

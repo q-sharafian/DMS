@@ -1,6 +1,7 @@
 package models
 
 type User struct {
+	// ID of the user
 	ID          ID     `json:"id"`
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phone_number"`
