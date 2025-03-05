@@ -18,7 +18,7 @@ type UserService interface {
 type sUserService struct {
 	user   dal.UserDAL
 	jp     dal.JPDAL
-	logger *l.Logger
+	logger l.Logger
 }
 
 // Create a user and return its id. If couldn't create user, return error.
@@ -55,7 +55,7 @@ func (s sUserService) CreateUser(name string, phone string, CreatedBy m.ID) (m.I
 }
 
 // Create an instance of sUserService struct
-func newsUserService(user dal.UserDAL, jp dal.JPDAL, logger *l.Logger) UserService {
+func newsUserService(user dal.UserDAL, jp dal.JPDAL, logger l.Logger) UserService {
 	return &sUserService{
 		user,
 		jp,

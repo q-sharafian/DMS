@@ -22,7 +22,7 @@ type JPService interface {
 // This implementation has minimum functionalities.
 type sJPService struct {
 	jp     dal.JPDAL
-	logger *l.Logger
+	logger l.Logger
 }
 
 func (s *sJPService) GetUserJPs(userID m.ID) ([]m.JobPosotion, *e.Error) {
@@ -55,6 +55,6 @@ func (s *sJPService) CreateJP(userID, regionID, parentID m.ID, jpTitle string, c
 }
 
 // Create an instance of sJPService struct
-func newsJPService(jp dal.JPDAL, logger *l.Logger) JPService {
+func newsJPService(jp dal.JPDAL, logger l.Logger) JPService {
 	return &sJPService{jp, logger}
 }
