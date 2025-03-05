@@ -6,7 +6,8 @@ import (
 )
 
 type EventDAL interface {
-	CreateEvent(event *m.Event) error
+	// Create event and return its id.
+	CreateEvent(event *m.Event) (m.ID, error)
 	GetLastEventByUserID(id m.ID) (*m.Event, error)
 	GetLastApprovedEventByUserID(id m.ID) (*m.Event, *m.ApprovedEvent, error)
 	// Return all created events by user has id.
@@ -23,8 +24,8 @@ func newPsqlEventDAL(db *db.PSQLDB) *psqlEventDAL {
 	return &psqlEventDAL{db}
 }
 
-func (d *psqlEventDAL) CreateEvent(event *m.Event) error {
-	return nil
+func (d *psqlEventDAL) CreateEvent(event *m.Event) (m.ID, error) {
+	return m.NilID, nil
 }
 
 func (d *psqlEventDAL) GetLastEventByUserID(id m.ID) (*m.Event, error) {

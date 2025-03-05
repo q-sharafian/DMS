@@ -22,7 +22,8 @@ const (
 )
 
 type DocDAL interface {
-	CreateDoc(doc *models.Doc) error
+	// Create doc and return its id
+	CreateDoc(doc *models.Doc) (models.ID, error)
 	GetLastDocByUserID(id int) (*models.Doc, error)
 	// Get latest created document of event with event_id by user_id. Then return that
 	// document together with the name of event and user.
@@ -38,8 +39,8 @@ func newPsqlDocDAL(db *db.PSQLDB) *psqlDocDAL {
 	return &psqlDocDAL{db}
 }
 
-func (d *psqlDocDAL) CreateDoc(doc *models.Doc) error {
-	return nil
+func (d *psqlDocDAL) CreateDoc(doc *models.Doc) (models.ID, error) {
+	return models.NilID, nil
 }
 
 func (d *psqlDocDAL) GetLastDocByUserID(id int) (*models.Doc, error) {

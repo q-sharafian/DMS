@@ -3,47 +3,59 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
-	"DMS/internal/models"
 	m "DMS/internal/models"
 )
 
 type UserService interface {
-	// Create a child for a user in the hierarchy tree. If the user be allowed and
+	// Create a user in the hierarchy tree. If the creator user be allowed and
 	// not being disabled.
-	CreateChildUser(user models.User) (models.User, error)
+	CreateUser(name, phone string, CreatedBy m.ID) (m.ID, *e.Error)
 }
-
-type userServiceErrorCode int
-
-const (
-	// The user is disabled and can't do anything
-	IsDisabled userServiceErrorCode = iota
-)
 
 // It's a simple implementation of UserService interface.
-// It has minimum functionalities.
+// This implementation has minimum functionalities.
 type sUserService struct {
 	user dal.UserDAL
+	jp   dal.JPDAL
 }
 
-// Create a child and return it.
-// In this method, each user could create child and doesn't matter the user is allow or not.
-// If error code be IsDisabled, it means the user is disabled.
-func (s *sUserService) CreateChildUser(user m.User) (m.User, error) {
-	isDisabled, _ := s.user.IsDisabledByID(user.ID)
+// Create a user and return its id. If couldn't create user, return error.
+// In this implemented method, each user could create user and doesn't matter the
+// user is allow or not.
+// Possible error codes the function could return:
+// IsDisabled-UserExists- DBError
+func (s sUserService) CreateUser(name string, phone string, CreatedBy m.ID) (m.ID, *e.Error) {
+	// Check if there's a user with given phone-number previously.
+	isExists, err := s.user.IsExistUserByPhone(phone)
+	if err != nil {
+		return m.NilID, (e.NewErrorP(err.Error(), DBError))
+	}
+	if isExists {
+		return m.NilID, e.NewErrorP(
+			"the user already exists",
+			UserExists,
+		)
+	}
+
+	isDisabled, _ := s.user.IsDisabledByID(CreatedBy)
 	if isDisabled {
-		return m.User{}, e.NewError(
+		return m.NilID, e.NewErrorP(
 			"the user is disabled",
 			IsDisabled,
 		)
 	}
-	if err := s.user.CreateUser(user.Name, user.PhoneNumber); err != nil {
-		return m.User{}, err
+	newUserID, err := s.user.CreateUser(name, phone, CreatedBy)
+	if err != nil {
+		return newUserID, e.NewErrorP(err.Error(), DBError)
 	}
-	return user, nil
+
+	return newUserID, nil
 }
 
-// Create an instance of UserService interface
-func NewUserService(userRepo dal.UserDAL) UserService {
-	return &sUserService{userRepo}
+// Create an instance of sUserService struct
+func newsUserService(user dal.UserDAL, jp dal.JPDAL) UserService {
+	return &sUserService{
+		user,
+		jp,
+	}
 }

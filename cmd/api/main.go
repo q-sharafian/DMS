@@ -1,8 +1,13 @@
 package main
 
 import (
+	"DMS/internal/controllers"
 	"DMS/internal/dal"
 	"DMS/internal/db"
+	"DMS/internal/routes"
+	"DMS/internal/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -14,5 +19,12 @@ func main() {
 		Password: "3522694",
 		DB:       "DMS",
 	}
-	dall := dal.NewPostgresDAL(psqlConnDetails)
+	psqlDAL := dal.NewPostgresDAL(psqlConnDetails)
+	simpleService := services.NewsService(&psqlDAL)
+	httpController := controllers.NewHttpController(simpleService)
+
+	router := gin.Default()
+	routes.SetupRouter(router, httpController)
+	router.Run(":8080")
+
 }
