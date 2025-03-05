@@ -1,6 +1,9 @@
 package services
 
-import "DMS/internal/dal"
+import (
+	"DMS/internal/dal"
+	l "DMS/internal/logger"
+)
 
 type serviceErrorCode int
 
@@ -23,12 +26,12 @@ type Service struct {
 }
 
 // Create a new simple service
-func NewsService(dal *dal.DAL) Service {
+func NewsService(dal *dal.DAL, logger l.Logger) Service {
 	s := Service{
-		Doc:   newsDocService(dal.Doc),
-		Event: newsEventService(dal.Event),
-		JP:    newsJPService(dal.JP),
-		User:  newsUserService(dal.User, dal.JP),
+		Doc:   newsDocService(dal.Doc, &logger),
+		Event: newsEventService(dal.Event, &logger),
+		JP:    newsJPService(dal.JP, &logger),
+		User:  newsUserService(dal.User, dal.JP, &logger),
 	}
 	return s
 }

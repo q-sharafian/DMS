@@ -3,6 +3,7 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"time"
 )
@@ -49,7 +50,8 @@ type DocService interface {
 // It's a simple implementation of DocService interface.
 // This implementation has minimum functionalities.
 type sDocService struct {
-	doc dal.DocDAL
+	doc    dal.DocDAL
+	logger *l.Logger
 }
 
 // Possible error codese:
@@ -74,8 +76,9 @@ func (s *sDocService) CreateDoc(eventID, JPID m.ID, context string, mediaPaths [
 }
 
 // Create an instance of sDocService struct
-func newsDocService(doc dal.DocDAL) DocService {
+func newsDocService(doc dal.DocDAL, logger *l.Logger) DocService {
 	return &sDocService{
 		doc,
+		logger,
 	}
 }

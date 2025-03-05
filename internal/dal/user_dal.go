@@ -2,6 +2,7 @@ package dal
 
 import (
 	"DMS/internal/db"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 )
 
@@ -16,11 +17,12 @@ type UserDAL interface {
 
 // It's an implementation of UserDAL interface
 type psqlUserDAL struct {
-	db *db.PSQLDB
+	db     *db.PSQLDB
+	logger *l.Logger
 }
 
-func newPsqlUserDAL(db *db.PSQLDB) *psqlUserDAL {
-	return &psqlUserDAL{db}
+func newPsqlUserDAL(db *db.PSQLDB, logger *l.Logger) *psqlUserDAL {
+	return &psqlUserDAL{db, logger}
 }
 
 func (d *psqlUserDAL) CreateUser(name, phoneNumber string, id m.ID) (m.ID, error) {

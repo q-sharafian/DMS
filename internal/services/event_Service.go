@@ -3,6 +3,7 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"time"
 )
@@ -15,7 +16,8 @@ type EventService interface {
 // It's a simple implementation of EventService interface.
 // This implementation has minimum functionalities.
 type sEventService struct {
-	event dal.EventDAL
+	event  dal.EventDAL
+	logger *l.Logger
 }
 
 // Possible error codes:
@@ -35,8 +37,9 @@ func (s *sEventService) CreateEvent(eventName, description string, jpID m.ID) (m
 }
 
 // Create an instance of sEventService struct
-func newsEventService(event dal.EventDAL) EventService {
+func newsEventService(event dal.EventDAL, logger *l.Logger) EventService {
 	return &sEventService{
 		event,
+		logger,
 	}
 }

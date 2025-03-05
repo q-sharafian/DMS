@@ -3,6 +3,7 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 )
 
@@ -15,8 +16,9 @@ type UserService interface {
 // It's a simple implementation of UserService interface.
 // This implementation has minimum functionalities.
 type sUserService struct {
-	user dal.UserDAL
-	jp   dal.JPDAL
+	user   dal.UserDAL
+	jp     dal.JPDAL
+	logger *l.Logger
 }
 
 // Create a user and return its id. If couldn't create user, return error.
@@ -53,9 +55,10 @@ func (s sUserService) CreateUser(name string, phone string, CreatedBy m.ID) (m.I
 }
 
 // Create an instance of sUserService struct
-func newsUserService(user dal.UserDAL, jp dal.JPDAL) UserService {
+func newsUserService(user dal.UserDAL, jp dal.JPDAL, logger *l.Logger) UserService {
 	return &sUserService{
 		user,
 		jp,
+		logger,
 	}
 }

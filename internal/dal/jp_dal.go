@@ -2,6 +2,7 @@ package dal
 
 import (
 	"DMS/internal/db"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 )
 
@@ -13,11 +14,12 @@ type JPDAL interface {
 }
 
 type psqlJPDAL struct {
-	db *db.PSQLDB
+	db     *db.PSQLDB
+	logger *l.Logger
 }
 
-func newpsqlJPDAL(db *db.PSQLDB) *psqlJPDAL {
-	return &psqlJPDAL{db}
+func newpsqlJPDAL(db *db.PSQLDB, logger *l.Logger) *psqlJPDAL {
+	return &psqlJPDAL{db, logger}
 }
 
 func (dal *psqlJPDAL) CreateJP(jp *m.JobPosotion) (m.ID, error) {

@@ -2,6 +2,7 @@ package dal
 
 import (
 	"DMS/internal/db"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 )
 
@@ -17,11 +18,12 @@ type EventDAL interface {
 
 // It's an implementaion of EventDAL interface
 type psqlEventDAL struct {
-	db *db.PSQLDB
+	db     *db.PSQLDB
+	logger *l.Logger
 }
 
-func newPsqlEventDAL(db *db.PSQLDB) *psqlEventDAL {
-	return &psqlEventDAL{db}
+func newPsqlEventDAL(db *db.PSQLDB, logger *l.Logger) *psqlEventDAL {
+	return &psqlEventDAL{db, logger}
 }
 
 func (d *psqlEventDAL) CreateEvent(event *m.Event) (m.ID, error) {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	l "DMS/internal/logger"
 	"fmt"
 	"time"
 
@@ -73,7 +74,7 @@ type PsqlConnDetails struct {
 
 // Create a new PostgreSQL database instance. If occured any error during connecting
 // to database, panic.
-func NewPsqlConn(conn *PsqlConnDetails) PSQLDB {
+func NewPsqlConn(conn *PsqlConnDetails, logger *l.Logger) PSQLDB {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Tehran",
 		conn.Host, conn.Username, conn.Password, conn.DB, conn.Port,

@@ -2,6 +2,7 @@ package dal
 
 import (
 	"DMS/internal/db"
+	l "DMS/internal/logger"
 	"DMS/internal/models"
 )
 
@@ -32,11 +33,12 @@ type DocDAL interface {
 
 // It's an implementaion of DocDAL interface
 type psqlDocDAL struct {
-	db *db.PSQLDB
+	db     *db.PSQLDB
+	logger *l.Logger
 }
 
-func newPsqlDocDAL(db *db.PSQLDB) *psqlDocDAL {
-	return &psqlDocDAL{db}
+func newPsqlDocDAL(db *db.PSQLDB, logger *l.Logger) *psqlDocDAL {
+	return &psqlDocDAL{db, logger}
 }
 
 func (d *psqlDocDAL) CreateDoc(doc *models.Doc) (models.ID, error) {

@@ -3,6 +3,7 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"fmt"
 	"time"
@@ -20,7 +21,8 @@ type JPService interface {
 // It's a simple implementation of JPService interface.
 // This implementation has minimum functionalities.
 type sJPService struct {
-	jp dal.JPDAL
+	jp     dal.JPDAL
+	logger *l.Logger
 }
 
 func (s *sJPService) GetUserJPs(userID m.ID) ([]m.JobPosotion, *e.Error) {
@@ -53,6 +55,6 @@ func (s *sJPService) CreateJP(userID, regionID, parentID m.ID, jpTitle string, c
 }
 
 // Create an instance of sJPService struct
-func newsJPService(jp dal.JPDAL) JPService {
-	return &sJPService{jp}
+func newsJPService(jp dal.JPDAL, logger *l.Logger) JPService {
+	return &sJPService{jp, logger}
 }
