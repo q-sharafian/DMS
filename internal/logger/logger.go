@@ -59,15 +59,23 @@ type Logger interface {
 	Errorf(format string, args ...any)
 
 	// Fatal logs a message at the fatal level and then calls os.Exit(1).
+	// Even if the minimum acceptable log level is higher than fatal and the log is not
+	// being processed, call os.Exit(1).
 	Fatal(args ...any)
 
 	// Fatalf logs a formatted message at the fatal level and then calls os.Exit(1).
+	// Even if the minimum acceptable log level is higher than fatal and the log is not
+	// being processed, call os.Exit(1).
 	Fatalf(format string, args ...any)
 
 	// Panic logs a message at the panic level and then calls panic().
+	// Even if the minimum acceptable log level is higher than panic and the log is not
+	// being processed, call psnic().
 	Panic(args ...any)
 
 	// Panicf logs a formatted message at the panic level and then calls panic().
+	// Even if the minimum acceptable log level is higher than panic and the log is not
+	// being processed, call panic().
 	Panicf(format string, args ...any)
 
 	// WithFields returns a new logger with the given fields added to the context.
@@ -158,29 +166,29 @@ func (l *SLogger) Errorf(format string, args ...any) {
 func (l *SLogger) Fatal(args ...any) {
 	if l.isAcceptableLogLevel(Fatal) {
 		l.log("FATAL", args...)
-		os.Exit(1)
 	}
+	os.Exit(1)
 }
 
 func (l *SLogger) Fatalf(format string, args ...any) {
 	if l.isAcceptableLogLevel(Fatal) {
 		l.logf("FATAL", format, args...)
-		os.Exit(1)
 	}
+	os.Exit(1)
 }
 
 func (l *SLogger) Panic(args ...any) {
 	if l.isAcceptableLogLevel(Panic) {
 		l.log("PANIC", args...)
-		panic(fmt.Sprint(args...))
 	}
+	panic(fmt.Sprint(args...))
 }
 
 func (l *SLogger) Panicf(format string, args ...any) {
 	if l.isAcceptableLogLevel(Panic) {
 		l.logf("PANIC", format, args...)
-		panic(fmt.Sprintf(format, args...))
 	}
+	panic(fmt.Sprintf(format, args...))
 }
 
 func (l *SLogger) WithFields(fields map[string]any) Logger {

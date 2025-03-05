@@ -19,10 +19,10 @@ type EventDAL interface {
 // It's an implementaion of EventDAL interface
 type psqlEventDAL struct {
 	db     *db.PSQLDB
-	logger *l.Logger
+	logger l.Logger
 }
 
-func newPsqlEventDAL(db *db.PSQLDB, logger *l.Logger) *psqlEventDAL {
+func newPsqlEventDAL(db *db.PSQLDB, logger l.Logger) *psqlEventDAL {
 	return &psqlEventDAL{db, logger}
 }
 

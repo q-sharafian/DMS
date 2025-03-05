@@ -34,10 +34,10 @@ type DocDAL interface {
 // It's an implementaion of DocDAL interface
 type psqlDocDAL struct {
 	db     *db.PSQLDB
-	logger *l.Logger
+	logger l.Logger
 }
 
-func newPsqlDocDAL(db *db.PSQLDB, logger *l.Logger) *psqlDocDAL {
+func newPsqlDocDAL(db *db.PSQLDB, logger l.Logger) *psqlDocDAL {
 	return &psqlDocDAL{db, logger}
 }
 

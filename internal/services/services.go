@@ -28,10 +28,10 @@ type Service struct {
 // Create a new simple service
 func NewsService(dal *dal.DAL, logger l.Logger) Service {
 	s := Service{
-		Doc:   newsDocService(dal.Doc, &logger),
-		Event: newsEventService(dal.Event, &logger),
-		JP:    newsJPService(dal.JP, &logger),
-		User:  newsUserService(dal.User, dal.JP, &logger),
+		Doc:   newsDocService(dal.Doc, logger),
+		Event: newsEventService(dal.Event, logger),
+		JP:    newsJPService(dal.JP, logger),
+		User:  newsUserService(dal.User, dal.JP, logger),
 	}
 	return s
 }

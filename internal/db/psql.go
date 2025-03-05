@@ -74,18 +74,17 @@ type PsqlConnDetails struct {
 
 // Create a new PostgreSQL database instance. If occured any error during connecting
 // to database, panic.
-func NewPsqlConn(conn *PsqlConnDetails, logger *l.Logger) PSQLDB {
+func NewPsqlConn(conn *PsqlConnDetails, logger l.Logger) PSQLDB {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Tehran",
 		conn.Host, conn.Username, conn.Password, conn.DB, conn.Port,
 	)
+	logger.Infof("Trying to connect to PSQL database \"%s\" ", conn.DB)
 	var db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(
-			fmt.Sprintf(
-				"Failed to create a connection to PostgreSQL database. DB-name: '%s', username: '%s', port: %d, host: '%s'\nError: %s\n",
-				conn.DB, conn.Username, conn.Port, conn.Host, err,
-			),
+		logger.Panicf(
+			"Failed to create a connection to PostgreSQL database. DB-name: '%s', username: '%s', port: %d, host: '%s'\nError: %s\n",
+			conn.DB, conn.Username, conn.Port, conn.Host, err,
 		)
 	}
 	return *db

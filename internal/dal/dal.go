@@ -15,11 +15,11 @@ type DAL struct {
 
 // Connect to the database and implement DAL for PostgreSQL. The first argument is connection details of psql database.
 func NewPostgresDAL(ConnDetails db.PsqlConnDetails, logger l.Logger) DAL {
-	db := db.NewPsqlConn(&ConnDetails, &logger)
+	db := db.NewPsqlConn(&ConnDetails, logger)
 	return DAL{
-		User:  newPsqlUserDAL(&db, &logger),
-		Doc:   newPsqlDocDAL(&db, &logger),
-		Event: newPsqlEventDAL(&db, &logger),
-		JP:    newpsqlJPDAL(&db, &logger),
+		User:  newPsqlUserDAL(&db, logger),
+		Doc:   newPsqlDocDAL(&db, logger),
+		Event: newPsqlEventDAL(&db, logger),
+		JP:    newpsqlJPDAL(&db, logger),
 	}
 }

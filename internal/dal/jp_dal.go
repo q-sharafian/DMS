@@ -15,10 +15,10 @@ type JPDAL interface {
 
 type psqlJPDAL struct {
 	db     *db.PSQLDB
-	logger *l.Logger
+	logger l.Logger
 }
 
-func newpsqlJPDAL(db *db.PSQLDB, logger *l.Logger) *psqlJPDAL {
+func newpsqlJPDAL(db *db.PSQLDB, logger l.Logger) *psqlJPDAL {
 	return &psqlJPDAL{db, logger}
 }
 

@@ -18,10 +18,10 @@ type UserDAL interface {
 // It's an implementation of UserDAL interface
 type psqlUserDAL struct {
 	db     *db.PSQLDB
-	logger *l.Logger
+	logger l.Logger
 }
 
-func newPsqlUserDAL(db *db.PSQLDB, logger *l.Logger) *psqlUserDAL {
+func newPsqlUserDAL(db *db.PSQLDB, logger l.Logger) *psqlUserDAL {
 	return &psqlUserDAL{db, logger}
 }
 
