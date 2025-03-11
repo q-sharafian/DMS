@@ -5,80 +5,71 @@ import (
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
-	"time"
 )
-
-type MediaPath struct {
-	Type MediaType `json:"media_type"`
-	// Full path and file name (contains type too)
-	Src string `json:"src"`
-	// Just contains filename and its type
-	FileName string `json:"file_name"`
-}
-
-type MediaType uint8
-
-const (
-	Image MediaType = iota
-	Video
-	Audio
-)
-
-// Convert media to type compatible with MediaPath in the model package
-func (media MediaPath) toModelMediaPath() m.MediaPath {
-	return m.MediaPath{
-		Type:     m.MediaType(media.Type),
-		Src:      media.Src,
-		FileName: media.FileName,
-	}
-}
-
-// Convert media from MediaPath in the model package to the MediaPath in service packagee
-func (MediaPath) fromModelMediaPath(media m.MediaPath) MediaPath {
-	return MediaPath{
-		Type:     MediaType(media.Type),
-		Src:      media.Src,
-		FileName: media.FileName,
-	}
-}
 
 type DocService interface {
-	// Create document for specified job position and event in the current time that contains input context and mediaPaths
-	CreateDoc(eventID, JPID m.ID, context string, meediaPaths []MediaPath) (m.ID, *e.Error)
+	// Create document for specified job position and event in the current time and
+	// return its id.
+	//
+	// Possible error codes:
+	// DBError
+	CreateDoc(doc *m.Doc) (m.ID, *e.Error)
+	// Return n last docs by event id iff job position id have permission to read
+	// docs of the event. If eventCreatedByID be nil, we fetch event creator id from
+	// the database so for better performance, it's better to pass it to avoid more
+	// database query.
+	//
+	// Possible error codes:
+	// DBError
+	GetNLastDocByEventID(eventID m.ID, eventCreatedByID *m.ID, jpID m.ID, n int) (*[]m.Doc, *e.Error)
 }
 
 // It's a simple implementation of DocService interface.
 // This implementation has minimum functionalities.
 type sDocService struct {
-	doc    dal.DocDAL
-	logger l.Logger
+	doc        dal.DocDAL
+	logger     l.Logger
+	permission PermissionService
+	event      EventService
 }
 
-// Possible error codese:
-// DBError
-func (s *sDocService) CreateDoc(eventID, JPID m.ID, context string, mediaPaths []MediaPath) (m.ID, *e.Error) {
-	var paths []m.MediaPath
-	for _, p := range mediaPaths {
-		paths = append(paths, p.toModelMediaPath())
-	}
-	doc := m.Doc{
-		CreatedBy: JPID,
-		AtEvent:   eventID,
-		Context:   context,
-		Paths:     paths,
-		At:        time.Now(),
-	}
-	eventID, err := s.doc.CreateDoc(&doc)
+func (s *sDocService) CreateDoc(doc *m.Doc) (m.ID, *e.Error) {
+	eventID, err := s.doc.CreateDoc(doc)
 	if err != nil {
-		return m.NilID, e.NewErrorP(err.Error(), DBError)
+		return m.NilID, e.NewErrorP(err.Error(), SEDBError)
 	}
 	return eventID, nil
 }
 
+func (s *sDocService) GetNLastDocByEventID(eventID m.ID, eventCreatedByID *m.ID, jpID m.ID, n int) (*[]m.Doc, *e.Error) {
+	if eventCreatedByID == nil {
+		eventOwner, err := s.event.GetEventOwner(eventID)
+		if err != nil {
+			return nil, e.NewErrorP(err.Error(), SEDBError)
+		} else if eventOwner == nil {
+			return nil, e.NewErrorP("Event with id %s not found", SEWrongParameter, eventID.ToString())
+		}
+		eventCreatedByID = eventOwner
+	}
+	// The jpID must be the same as or an ancestor of the event creator's id.
+	isAncestor := s.permission.IsAncestor(jpID, *eventCreatedByID)
+	if !isAncestor {
+		return nil, e.NewErrorP("You don't have permission to read docs of event with id %s",
+			SENotAncestor, eventID.ToString())
+	}
+	docs, err := s.doc.GetNLastDocByEventID(eventID, n)
+	if err != nil {
+		return nil, e.NewErrorP(err.Error(), SEDBError)
+	}
+	return docs, nil
+}
+
 // Create an instance of sDocService struct
-func newsDocService(doc dal.DocDAL, logger l.Logger) DocService {
+func newSDocService(doc dal.DocDAL, permissionService PermissionService, eventService EventService, logger l.Logger) DocService {
 	return &sDocService{
 		doc,
 		logger,
+		permissionService,
+		eventService,
 	}
 }

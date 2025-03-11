@@ -8,6 +8,7 @@ import (
 	"DMS/internal/routes"
 	"DMS/internal/services"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,15 +18,18 @@ func main() {
 
 	psqlConnDetails := db.PsqlConnDetails{
 		Host: "localhost",
-		Port: 5192,
+		Port: 5432,
 		// TODO: Edit username and password such that use enviroment variable
-		Username: "mohammad",
-		Password: "3522694",
-		DB:       "DMS",
+		Username:        "mohammad",
+		Password:        "3522694",
+		DB:              "dms",
+		MaxConnLifetime: time.Hour,
+		MaxIdleConns:    5,
+		MAxOpenConns:    5,
 	}
-	psqlDAL := dal.NewPostgresDAL(psqlConnDetails, lgr)
-	simpleService := services.NewsService(&psqlDAL, lgr)
-	httpController := controllers.NewHttpController(simpleService)
+	psqlDAL := dal.NewPostgresDAL(psqlConnDetails, lgr, true)
+	simpleService := services.NewSService(&psqlDAL, lgr)
+	httpController := controllers.NewHttpController(simpleService, lgr)
 
 	router := gin.Default()
 	routes.SetupRouter(router, httpController)

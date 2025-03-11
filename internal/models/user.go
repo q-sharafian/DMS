@@ -13,5 +13,5 @@ type User struct {
 	// value 0 means it's not disabled and value 1 means it's disabled.
 	IsDisabled uint8 `json:"is_disabled"`
 	// The id of job position created this user
-	CreatedBy ID `json:"created_by" validate:"required"`
+	CreatedBy ID `json:"created_by"`
 }

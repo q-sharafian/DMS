@@ -59,23 +59,19 @@ type Logger interface {
 	Errorf(format string, args ...any)
 
 	// Fatal logs a message at the fatal level and then calls os.Exit(1).
-	// Even if the minimum acceptable log level is higher than fatal and the log is not
-	// being processed, call os.Exit(1).
+	// Whether the log processes or not, always call os.Exit(1) to terminate program.
 	Fatal(args ...any)
 
 	// Fatalf logs a formatted message at the fatal level and then calls os.Exit(1).
-	// Even if the minimum acceptable log level is higher than fatal and the log is not
-	// being processed, call os.Exit(1).
+	// Whether the log processes or not, always call os.Exit(1) to terminate program.
 	Fatalf(format string, args ...any)
 
 	// Panic logs a message at the panic level and then calls panic().
-	// Even if the minimum acceptable log level is higher than panic and the log is not
-	// being processed, call psnic().
+	// Whether the log processes or not, always call panic() to terminate program.
 	Panic(args ...any)
 
 	// Panicf logs a formatted message at the panic level and then calls panic().
-	// Even if the minimum acceptable log level is higher than panic and the log is not
-	// being processed, call panic().
+	// Whether the log processes or not, always call panic() to terminate program.
 	Panicf(format string, args ...any)
 
 	// WithFields returns a new logger with the given fields added to the context.

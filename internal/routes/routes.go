@@ -8,7 +8,11 @@ import (
 )
 
 func SetupRouter(router *gin.Engine, ctr c.HttpConrtoller) {
-	router.POST("/users", ctr.User.CreeateUser)
+	router.POST("/users", ctr.User.CreateUser)
+	// Admin is a sub-type of user entity
+	router.POST("/users/admin", ctr.User.CreateAdmin)
+	// router.POST("/jps", ctr.JP.CreateJP)
+
 	// router.GET("/users/:id", controller.GetUser)
 	// router.GET("/products", controllers.GetProducts) //Example of a different controller.
 

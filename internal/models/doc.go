@@ -7,12 +7,12 @@ type Doc struct {
 	// The id of job position who created the document
 	CreatedBy ID `json:"created_by"`
 	// The id of event the document is for that
-	AtEvent ID     `json:"at_event"`
-	Context string `json:"content"`
+	EventID ID      `json:"event_id"`
+	Context *string `json:"context"`
 	// Contains path of multimedia files in the document. (If there's in the document)
-	Paths []MediaPath `json:"path"`
+	Paths []MediaPath `json:"media_paths"`
 	// The time the document is created
-	At time.Time `json:"at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type MediaPath struct {
@@ -26,7 +26,7 @@ type MediaPath struct {
 type MediaType uint8
 
 const (
-	Image MediaType = iota
-	Video
-	Audio
+	MediaImage MediaType = iota
+	MediaVideo
+	MediaAudio
 )

@@ -35,17 +35,17 @@ func (e *Error) GetCode() ErrorCode {
 	return e.code
 }
 
-func NewError(msg string, code ErrorCode) Error {
+func NewError(msg string, code ErrorCode, args ...any) Error {
 	return Error{
-		message: msg,
+		message: fmt.Sprintf(msg, args),
 		code:    code,
 	}
 }
 
 // Create an error and return pointer to that
-func NewErrorP(msg string, code ErrorCode) *Error {
+func NewErrorP(msg string, code ErrorCode, args ...any) *Error {
 	return &Error{
-		message: msg,
+		message: fmt.Sprintf(msg, args),
 		code:    code,
 	}
 }
@@ -57,9 +57,19 @@ func NewErrorFmt(msg string, code ErrorCode, args ...any) Error {
 	}
 }
 
-func NewErrorFmtP(msg string, code ErrorCode, args ...any) *Error {
-	return &Error{
-		message: fmt.Sprintf(msg, args),
-		code:    code,
+// A simple error implementation
+type SError struct {
+	message string
+}
+
+// Error returns the error message.
+func (e *SError) Error() string {
+	return e.message
+}
+
+// NewError creates a new simple error instance.
+func NewSError(message string) *SError {
+	return &SError{
+		message: message,
 	}
 }

@@ -6,16 +6,16 @@ import (
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"fmt"
-	"time"
 )
 
 type JPService interface {
 	// Return all job positions the user have
 	GetUserJPs(userID m.ID) ([]m.JobPosotion, *e.Error)
 	// Create job position for the given user and details then, reutrn its id.
-	// Two of the inputs are the ID of the (parent) JP to which the current JP belongs,
-	// and another is the time the JP was created.
-	CreateJP(userID, regionID, parentID m.ID, jpTitle string, createdTime time.Time, permissions m.Permission) (m.ID, *e.Error)
+	//
+	// Possible error codes the function could returns:
+	// DBError
+	CreateJP(jp *m.JobPosotion, permissions *m.Permission) (*m.ID, *e.Error)
 }
 
 // It's a simple implementation of JPService interface.
@@ -28,22 +28,17 @@ type sJPService struct {
 func (s *sJPService) GetUserJPs(userID m.ID) ([]m.JobPosotion, *e.Error) {
 	jps, err := s.jp.GetJPsByUserID(userID)
 	if err != nil {
-		return []m.JobPosotion{}, e.NewErrorP(err.Error(), DBError)
+		return []m.JobPosotion{}, e.NewErrorP(err.Error(), SEDBError)
 	}
 	return jps, nil
 }
 
-func (s *sJPService) CreateJP(userID, regionID, parentID m.ID, jpTitle string, createdTime time.Time, permissions m.Permission) (m.ID, *e.Error) {
-	jp := m.JobPosotion{
-		UserID:   userID,
-		ParentID: parentID,
-		RegionID: regionID,
-		Title:    jpTitle,
-		At:       createdTime,
-	}
-	jpID, err := s.jp.CreateJP(&jp)
+// Note that in this implementation, createdTime value doesn't matter and createdTime
+// is always the current time.
+func (s *sJPService) CreateJP(jp *m.JobPosotion, permissions *m.Permission) (*m.ID, *e.Error) {
+	jpID, err := s.jp.CreateJP(jp)
 	if err != nil {
-		return m.NilID, e.NewErrorFmtP(err.Error(), DBError).
+		return nil, e.NewErrorP(err.Error(), SEDBError).
 			AppendBegin(
 				fmt.Sprintf(
 					"failed to create job position for userID %s",
@@ -55,6 +50,6 @@ func (s *sJPService) CreateJP(userID, regionID, parentID m.ID, jpTitle string, c
 }
 
 // Create an instance of sJPService struct
-func newsJPService(jp dal.JPDAL, logger l.Logger) JPService {
+func newSJPService(jp dal.JPDAL, logger l.Logger) JPService {
 	return &sJPService{jp, logger}
 }
