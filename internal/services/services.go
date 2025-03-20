@@ -3,6 +3,7 @@ package services
 import (
 	"DMS/internal/dal"
 	l "DMS/internal/logger"
+	"time"
 )
 
 type serviceErrorCode int
@@ -12,7 +13,8 @@ const (
 	// The user is disabled and can't request anything
 	SEIsDisabled serviceErrorCode = 0
 	// The entity is exists previously
-	SEExists   = 1
+	SEExists = 1
+	// A specific resource not found. (e.g. user, session, and etc)
 	SENotFound = 2
 	// Errors related to communicating to DBs. (e.g. connection timeout)
 	SEDBError = 3
@@ -22,6 +24,12 @@ const (
 	SENotAncestor = 5
 	// some input data are wrong
 	SEWrongParameter = 6
+	// Some input data are empty
+	SEEmpty = 7
+	// Authentication failed. e.g. the JWT is invalid or expired.
+	SEAuthFailed = 8
+	// The user has logged out of the session or the session has been disabled for some reason.
+	SESessionExpired = 9
 )
 
 type Service struct {
@@ -30,6 +38,7 @@ type Service struct {
 	JP         JPService
 	User       UserService
 	Permission PermissionService
+	Session    SessionService
 }
 
 // Create a new simple service
@@ -43,6 +52,12 @@ func NewSService(dal *dal.DAL, logger l.Logger) Service {
 		JP:         newSJPService(dal.JP, logger),
 		User:       newSUserService(dal.User, dal.JP, logger),
 		Permission: permission,
+		Session:    newSSessionService(dal.Session, dal.User, logger),
 	}
 	return s
+}
+
+// Return current unix timestamp in seconds and UTC timezone.
+func getStdTime() int64 {
+	return time.Now().UTC().Unix()
 }

@@ -2,46 +2,69 @@ package db
 
 import (
 	l "DMS/internal/logger"
+	"database/sql/driver"
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type ID uint64
+type ID uuid.UUID
 
-func (d *ID) ToInt64() int64 {
-	return int64(*d)
+func (d ID) ToString() string {
+	return uuid.UUID(d).String()
+}
+func (d *ID) FromString(strID string) error {
+	id, err := uuid.Parse(strID)
+	if err != nil {
+		return err
+	}
+	*d = ID(id)
+	return nil
 }
 
-func (d *ID) IsNull() bool {
-	return *d == 0
+// Convert input value to the ID data type. It's used by the GORM.
+func (d *ID) Scan(value any) error {
+	strVal, isStr := value.(string)
+	if !isStr {
+		return fmt.Errorf("cannot convert %v of type %T to db.ID", value, value)
+	}
+	err := d.FromString(strVal)
+	return err
+}
+
+// Return the ID to in a suitable format for the database driver. In this case, it's a string.
+func (d ID) Value() (driver.Value, error) {
+	return d.ToString(), nil
 }
 
 type BaseModel struct {
-	ID        ID `gorm:"primaryKey"`
+	ID        ID `gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
+type Disability int8
+
 const (
-	IsDisabled    uint8 = 1
-	IsNotDisabled uint8 = 0
+	IsDisabled    Disability = 1
+	IsNotDisabled Disability = 0
 )
 
 type User struct {
 	BaseModel
 	Name        string
 	PhoneNumber string `gorm:"not null;unique"`
-	// value 0 means it's not disabled and value 1 means it's disabled.
-	IsDisabled uint8
+	IsDisabled  Disability
 	// The user created the current user
-	CreatedByID *ID
+	CreatedByID *ID   `gorm:"type:uuid"`
 	CreatedBy   *User `gorm:"foreignKey:CreatedByID"`
 	// Each user could have many job positions
 	JobPosition []JobPosition `gorm:"foreignKey:UserID"`
+	Session     []Session     `gorm:"foreignKey:UserID"`
 }
 
 type Event struct {
@@ -49,7 +72,7 @@ type Event struct {
 	// event name
 	Name string
 	// The id of job position who created the document
-	CreatedByID ID `gorm:"not null"`
+	CreatedByID ID `gorm:"type:uuid;default:uuid_generate_v4();not null"`
 	Description string
 	Doc         []Doc `gorm:"foreignKey:EventID"`
 }
@@ -57,9 +80,9 @@ type Event struct {
 type Doc struct {
 	BaseModel
 	// The id of job position who created the document
-	CreatedByID ID `gorm:"not null"`
+	CreatedByID ID `gorm:"type:uuid;default:uuid_generate_v4();not null"`
 	// The id of event the document is for that
-	EventID    ID `gorm:"not null"`
+	EventID    ID `gorm:"type:uuid;default:uuid_generate_v4();not null"`
 	Context    *string
 	Multimedia *[]Multimedia `gorm:"foreignKey:DocID"`
 }
@@ -74,7 +97,7 @@ const (
 
 type Multimedia struct {
 	BaseModel
-	DocID ID `gorm:"not null"`
+	DocID ID `gorm:"type:uuid;default:uuid_generate_v4();not null"`
 	Type  MediaType
 	// Full path and file name (contains type too)
 	Src string
@@ -85,22 +108,22 @@ type Multimedia struct {
 type JobPosition struct {
 	BaseModel
 	// ID of the user the JP is for that.
-	UserID   ID `gorm:"not null"`
+	UserID   ID `gorm:"type:uuid;not null"`
 	Title    string
-	RegionID ID
+	RegionID ID `gorm:"type:uuid;default:uuid_generate_v4()"`
 	// ID of parent job position the current job position is for that
-	ParentID      *ID
+	ParentID      *ID           `gorm:"type:uuid"`
 	Parent        *JobPosition  `gorm:"foreignKey:ParentID"`
-	JPPermission  JPPermission  `gorm:"foreignKey:JPID"`
+	JPPermission  JPPermission  `gorm:"foreignKey:JpID"`
 	Event         []Event       `gorm:"foreignKey:CreatedByID"`
 	Doc           []Doc         `gorm:"foreignKey:CreatedByID"`
-	HierarchyTree HierarchyTree `gorm:"foreignKey:JPID"`
+	HierarchyTree HierarchyTree `gorm:"foreignKey:JpID"`
 }
 
 // Permissions of a job position
 type JPPermission struct {
 	BaseModel
-	JPID            ID `gorm:"not null;unique"`
+	JpID            ID `gorm:"type:uuid;default:uuid_generate_v4();not null;unique"`
 	IsAllowCreateJP bool
 }
 
@@ -114,9 +137,20 @@ func (JPPermission) TableName() string {
 // job positions.
 type HierarchyTree struct {
 	BaseModel
-	JPID ID `gorm:"not null;unique"`
-	// TODO: Create foreign ket for elements of this array
-	ChildJPsID *[]ID
+	JpID ID `gorm:"type:uuid;default:uuid_generate_v4();not null;unique"`
+	// TODO: The type must be uuid or uuid[]?
+	ChildJpsID *[]ID `gorm:"type:uuid;default:uuid_generate_v4()"`
+}
+
+// Store details of each login by users
+type Session struct {
+	BaseModel
+	UserID    ID     `gorm:"type:uuid;not null"`
+	UserAgent string `gorm:"not null"`
+	// It's stored as a Unix timestamp. (In seconds and UTC time zone)
+	ExpiredAt int64 `gorm:"not null"`
+	// It's stored as a Unix timestamp. (In seconds and UTC time zone)
+	LastUsageAt int64
 }
 
 // A type alias for PostgreSQL database type
@@ -175,5 +209,6 @@ func NewPsqlConn(conn *PsqlConnDetails, doAutoMigrate bool, logger l.Logger) PSQ
 
 // Migrate from schema to database and update the database scheme.
 func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&User{}, &Event{}, &Doc{}, &JobPosition{}, &JPPermission{})
+	return db.AutoMigrate(&User{}, &Event{}, &Doc{}, &JobPosition{}, &JPPermission{}, &HierarchyTree{},
+		&Multimedia{}, &Session{})
 }

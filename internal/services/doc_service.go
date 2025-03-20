@@ -8,19 +8,20 @@ import (
 )
 
 type DocService interface {
-	// Create document for specified job position and event in the current time and
-	// return its id.
+	// Create document for specified event in the current time and return its id.
+	// At this stage, just the user created the event, could create document for the event.
 	//
 	// Possible error codes:
-	// DBError
-	CreateDoc(doc *m.Doc) (m.ID, *e.Error)
+	// SEDBError- SEIsDisabled
+	// TODO: implement SEIsDisabled
+	CreateDoc(doc *m.Doc) (*m.ID, *e.Error)
 	// Return n last docs by event id iff job position id have permission to read
 	// docs of the event. If eventCreatedByID be nil, we fetch event creator id from
 	// the database so for better performance, it's better to pass it to avoid more
 	// database query.
 	//
 	// Possible error codes:
-	// DBError
+	// SEDBError
 	GetNLastDocByEventID(eventID m.ID, eventCreatedByID *m.ID, jpID m.ID, n int) (*[]m.Doc, *e.Error)
 }
 
@@ -33,10 +34,10 @@ type sDocService struct {
 	event      EventService
 }
 
-func (s *sDocService) CreateDoc(doc *m.Doc) (m.ID, *e.Error) {
+func (s *sDocService) CreateDoc(doc *m.Doc) (*m.ID, *e.Error) {
 	eventID, err := s.doc.CreateDoc(doc)
 	if err != nil {
-		return m.NilID, e.NewErrorP(err.Error(), SEDBError)
+		return nil, e.NewErrorP(err.Error(), SEDBError)
 	}
 	return eventID, nil
 }

@@ -10,11 +10,14 @@ import (
 
 type JPService interface {
 	// Return all job positions the user have
+	//
+	// Possible error codes the function could returns:
+	// SEDBError
 	GetUserJPs(userID m.ID) ([]m.JobPosotion, *e.Error)
 	// Create job position for the given user and details then, reutrn its id.
 	//
 	// Possible error codes the function could returns:
-	// DBError
+	// SEDBError
 	CreateJP(jp *m.JobPosotion, permissions *m.Permission) (*m.ID, *e.Error)
 }
 

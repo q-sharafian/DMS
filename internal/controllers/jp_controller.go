@@ -14,7 +14,7 @@ type JPHttp struct {
 	logger    l.Logger
 }
 
-func NewJPHttp(jobPositionService s.JPService, logger l.Logger) JPHttp {
+func newJPHttp(jobPositionService s.JPService, logger l.Logger) JPHttp {
 	return JPHttp{jobPositionService, logger}
 }
 
@@ -32,13 +32,29 @@ func (h *JPHttp) CreateJP(c *gin.Context) {
 
 	id, err := h.jpService.CreateJP(&jp.JobPosition, &jp.Permission)
 	if err == nil {
-		successResp(c, JPCreated, "")
+		successResp(c, MsgJPCreated, "")
 		h.logger.Debugf("Created job position with id %s successfully", id.ToString())
 		return
 	}
 	switch code := err.GetCode(); code {
 	case s.SEDBError:
 		h.logger.Errorf("Failed to create job position (%s)", err.Error())
-		serverErrResp(c, ServerError, TryAgain)
+		serverErrResp(c, MsgServerError, MsgTryAgain)
+	}
+}
+
+func (h *JPHttp) GetUserJPs(c *gin.Context) {
+	paramParser := newParamParser(c, h.logger)
+	var userID m.ID
+	if paramParser.parseID("id", &userID) != nil {
+		return
+	}
+	jps, err2 := h.jpService.GetUserJPs(userID)
+	switch code := err2.GetCode(); code {
+	case s.SEDBError:
+		h.logger.Infof("Failed to get job positions for user %s (%s)", userID.ToString(), err2.Error())
+		serverErrResp(c, MsgServerError, MsgTryAgain)
+	default:
+		successResp(c, MsgSuccessAction, jps)
 	}
 }

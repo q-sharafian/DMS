@@ -5,16 +5,26 @@ import (
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
 )
 
 type UserDAL interface {
 	// If the user successfully created, return created user's id.
 	// If createdByID be nil, the user will be created as admin.
-	CreateUser(name, phoneNumber string, createdByID *m.ID) (m.ID, error)
+	CreateUser(name string, phoneNumber m.PhoneNumber, createdByID *m.ID) (*m.ID, error)
 	GetUserByID(id m.ID) (*m.User, error)
+	// If both user and error be empty, means there's not any matched user.
+	GetUserByPhone(phoneNumber string) (*m.User, error)
 	// Returns true if the user is disabled.
 	IsDisabledByID(id m.ID) (bool, error)
 	IsExistUserByPhone(phoneNumber string) (bool, error)
+	// Returns true if the user exists with the given job position.
+	// Returns false if the user or job doesn't exist or one of them is deleted.
+	// (whether hard or soft delete)
+	IsExistsUserWithJP(userID, jpID m.ID) (bool, error)
 }
 
 // It's an implementation of UserDAL interface
@@ -27,38 +37,56 @@ func newPsqlUserDAL(db *db.PSQLDB, logger l.Logger) *psqlUserDAL {
 	return &psqlUserDAL{db, logger}
 }
 
-func (d *psqlUserDAL) CreateUser(name, phoneNumber string, createdByID *m.ID) (m.ID, error) {
+func (d *psqlUserDAL) CreateUser(name string, phoneNumber m.PhoneNumber, createdByID *m.ID) (*m.ID, error) {
 	user := db.User{
 		Name:        name,
-		PhoneNumber: phoneNumber,
+		PhoneNumber: phoneNumber.ToString(),
 		IsDisabled:  db.IsNotDisabled,
 		CreatedByID: modelID2DBID(createdByID),
 	}
 	d.logger.Debugf("Trying to create user with details: %+v", user)
 	result := d.db.Create(&user)
 	if result.Error != nil {
-		return m.NilID, result.Error
+		return nil, result.Error
 	}
 	if result.RowsAffected < 1 {
-		return m.NilID, e.NewSError("couldn't create user")
+		return nil, e.NewSError("couldn't create user")
 	}
-	return *dbID2ModelID(&user.ID), nil
+	return dbID2ModelID(&user.ID), nil
 }
 
 func (d *psqlUserDAL) GetUserByID(id m.ID) (*m.User, error) {
-	return nil, nil
+	var user db.User
+	result := d.db.Where(&db.User{BaseModel: db.BaseModel{ID: *modelID2DBID(&id)}}).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected < 1 {
+		return nil, fmt.Errorf("there's not any matched user with id %s", id.ToString())
+	}
+	return dbUser2ModelUser(&user), nil
 }
 
-// TODO: Complete it
+func (d *psqlUserDAL) GetUserByPhone(phoneNumber string) (*m.User, error) {
+	var user db.User
+	result := d.db.Where(&db.User{PhoneNumber: phoneNumber}).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	} else if result.RowsAffected < 1 {
+		return nil, nil
+	}
+	return dbUser2ModelUser(&user), nil
+}
+
 func (d *psqlUserDAL) IsDisabledByID(id m.ID) (bool, error) {
 	var user db.User
-	result := d.db.Preload("CreatedBy").Where(&db.User{BaseModel: db.BaseModel{ID: *modelID2DBID(&id)}}).First(&user)
+	result := d.db.Where(&db.User{BaseModel: db.BaseModel{ID: *modelID2DBID(&id)}}).First(&user)
 	if result.Error != nil {
 		return false, result.Error
 	}
 	d.logger.Debugf("Number of rows found during checking if the user is disabled: %d\nfetched user: %+v", result.RowsAffected, user)
 	if result.RowsAffected < 1 {
-		return false, e.NewSError("there's not any matched user")
+		return false, fmt.Errorf("there's not any matched user with id %s", id.ToString())
 	}
 	return user.IsDisabled == db.IsDisabled, nil
 }
@@ -74,4 +102,27 @@ func (d *psqlUserDAL) IsExistUserByPhone(phoneNumber string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func (p *psqlUserDAL) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
+	var dest any
+	result := p.db.Joins("INNER JOIN users ON users.id = job_positions.user_id").
+		Where("users.id = ? AND job_positions.id = ? AND users.deleted_at IS NULL AND job_positions.deleted_at IS NULL",
+			userID, jpID).Find(&dest)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) || result.RowsAffected < 1 {
+		return false, nil
+	} else if result.Error != nil {
+		return false, fmt.Errorf("database error in check Existant of user and JP. %s", result.Error)
+	}
+	return true, nil
+}
+
+func dbUser2ModelUser(user *db.User) *m.User {
+	return &m.User{
+		ID:          *dbID2ModelID(&user.ID),
+		Name:        user.Name,
+		PhoneNumber: dbPhone2ModelPhone(user.PhoneNumber),
+		IsDisabled:  dbDisability2ModelDisability(user.IsDisabled),
+		CreatedBy:   *dbID2ModelID(user.CreatedByID),
+	}
 }

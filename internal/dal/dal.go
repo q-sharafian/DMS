@@ -4,8 +4,10 @@ import (
 	"DMS/internal/db"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"fmt"
 )
 
+// If input be nil, return nil
 func dbID2ModelID(id *db.ID) *m.ID {
 	if id == nil {
 		return nil
@@ -14,11 +16,12 @@ func dbID2ModelID(id *db.ID) *m.ID {
 	return &a
 }
 
+// If input be nil, return nil
 func modelID2DBID(id *m.ID) *db.ID {
 	if id == nil {
 		return nil
 	}
-	a := db.ID(id.ToInt64())
+	a := db.ID(*id)
 	return &a
 }
 
@@ -43,6 +46,19 @@ func modelID2DBIDSlice(ids *[]m.ID) *[]db.ID {
 	return &res
 }
 
+func dbDisability2ModelDisability(userStatus db.Disability) m.Disability {
+	if userStatus == db.IsDisabled {
+		return m.IsDisabled
+	} else if userStatus == db.IsNotDisabled {
+		return m.IsNotDisabled
+	}
+	panic(fmt.Sprintf("unknown user status: %d", userStatus))
+}
+
+func dbPhone2ModelPhone(phone string) m.PhoneNumber {
+	return m.PhoneNumber(phone)
+}
+
 // DAL is a data access layer interface
 type DAL struct {
 	User       UserDAL
@@ -50,6 +66,7 @@ type DAL struct {
 	Event      EventDAL
 	JP         JPDAL
 	Permission PermissionDAL
+	Session    SessionDAL
 }
 
 // Connect to the database and implement DAL for PostgreSQL. The first argument is
@@ -63,5 +80,6 @@ func NewPostgresDAL(ConnDetails db.PsqlConnDetails, logger l.Logger, autoMigrate
 		Event:      newPsqlEventDAL(&db, logger),
 		JP:         newPsqlJPDAL(&db, logger),
 		Permission: newPsqlPermissionDAL(&db, logger),
+		Session:    newPsqlSessionDAL(&db, logger),
 	}
 }

@@ -86,8 +86,8 @@ func dbHierarchyTree2ModelHierarchyTree(hierarchyTrees *[]db.HierarchyTree) *[]m
 	for _, hierarchyTree := range *hierarchyTrees {
 		result = append(result, m.HierarchyTree{
 			ID:         *dbID2ModelID(&hierarchyTree.ID),
-			JPID:       *dbID2ModelID(&hierarchyTree.JPID),
-			JPChildsID: dbID2ModelIDSlice(hierarchyTree.ChildJPsID),
+			JPID:       *dbID2ModelID(&hierarchyTree.JpID),
+			JPChildsID: dbID2ModelIDSlice(hierarchyTree.ChildJpsID),
 		})
 	}
 	return &result

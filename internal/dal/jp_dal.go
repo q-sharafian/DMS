@@ -38,11 +38,11 @@ func (d *psqlJPDAL) CreateJP(jp *m.JobPosotion) (*m.ID, error) {
 	result := d.db.Create(&newJP)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to create job position for user-id %s (%s)", newJP.UserID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to create job position for user-id %s (%s)", newJP.UserID.ToString(), result.Error.Error())
 		return nil, result.Error
 	} else if result.RowsAffected < 1 {
 		d.logger.Debugf(`It seems can't create job position for user-id %s. Total rows 
-        created are %d"`, newJP.UserID.ToInt64(), result.RowsAffected)
+        created are %d"`, newJP.UserID.ToString(), result.RowsAffected)
 		return nil, e.NewSError("couldn't create job position")
 	}
 	return dbID2ModelID(&newJP.ID), nil
@@ -50,17 +50,17 @@ func (d *psqlJPDAL) CreateJP(jp *m.JobPosotion) (*m.ID, error) {
 
 func (d *psqlJPDAL) CreatePermission(JPID m.ID, permission *m.Permission) (*m.ID, error) {
 	newPermission := db.JPPermission{
-		JPID:            *modelID2DBID(&JPID),
+		JpID:            *modelID2DBID(&JPID),
 		IsAllowCreateJP: permission.IsAllowCreateJP,
 	}
 	result := d.db.Create(&newPermission)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to create permission for job position-id %s (%s)", newPermission.JPID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to create permission for job position-id %s (%s)", newPermission.JpID.ToString(), result.Error.Error())
 		return nil, result.Error
 	} else if result.RowsAffected < 1 {
 		d.logger.Debugf(`It seems can't create permission for job position-id %s. Total rows 
-        created are %d"`, newPermission.JPID.ToInt64(), result.RowsAffected)
+        created are %d"`, newPermission.JpID.ToString(), result.RowsAffected)
 		return nil, e.NewSError("couldn't create permission")
 	}
 	return dbID2ModelID(&newPermission.ID), nil

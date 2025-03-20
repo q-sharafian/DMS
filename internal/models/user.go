@@ -7,11 +7,26 @@ const (
 
 type User struct {
 	// ID of the user
-	ID          ID     `json:"id"`
-	Name        string `json:"name" validate:"required"`
-	PhoneNumber string `json:"phone_number" validate:"required"`
-	// value 0 means it's not disabled and value 1 means it's disabled.
-	IsDisabled uint8 `json:"is_disabled"`
+	ID          ID          `json:"id"`
+	Name        string      `json:"name" validate:"required"`
+	PhoneNumber PhoneNumber `json:"phone_number" validate:"required"`
+	IsDisabled  Disability  `json:"is_disabled"`
 	// The id of job position created this user
 	CreatedBy ID `json:"created_by"`
+}
+
+type PhoneNumber string
+
+func (p PhoneNumber) ToString() string {
+	return string(p)
+}
+
+// If the input phone was nil, return nil error and set phone to be nil.
+func (p *PhoneNumber) FromString(s *string) error {
+	if s == nil {
+		p = nil
+		return nil
+	}
+	*p = PhoneNumber(*s)
+	return nil
 }

@@ -7,7 +7,7 @@ import (
 type Event struct {
 	ID ID `json:"id"`
 	// event name
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 	// ID of job position wants to create event
 	CreatedBy   ID        `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`

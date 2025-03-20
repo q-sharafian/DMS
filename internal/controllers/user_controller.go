@@ -24,17 +24,18 @@ func (h *UserHttp) CreateUser(c *gin.Context) {
 	}
 	id, err := h.userService.CreateUser(user.Name, user.PhoneNumber, user.CreatedBy)
 	if err == nil {
-		successResp(c, UserCreated, "")
 		h.logger.Debugf("Created user with id %s successfully", id.ToString())
+		successResp(c, MsgUserCreated, newIDResponse(*id))
 		return
 	}
 	switch code := err.GetCode(); code {
 	case s.SEIsDisabled:
-		errResp(c, DisabledUsed, FixDisabledUserProblem)
+		errResp(c, MsgDisabledUsed, MsgFixDisabledUserProblem)
 	case s.SEExists:
-		errResp(c, UserExists, UserExistsExpanded)
+		errResp(c, MsgUserExists, MsgUserExistsExpanded)
 	case s.SEDBError:
-		serverErrResp(c, ServerError, TryAgain)
+		h.logger.Infof("Failed to create user with phone number %s (%s)", user.PhoneNumber, err.Error())
+		serverErrResp(c, MsgServerError, MsgTryAgain)
 	}
 }
 
@@ -45,16 +46,16 @@ func (h *UserHttp) CreateAdmin(c *gin.Context) {
 	}
 	id, err := h.userService.CreateAdmin(user.Name, user.PhoneNumber)
 	if err == nil {
-		successResp(c, AdminCreated, "")
+		successResp(c, MsgAdminCreated, newIDResponse(*id))
 		h.logger.Debugf("Created admin with id %s successfully", id.ToString())
 		return
 	}
 	switch code := err.GetCode(); code {
 	case s.SEIsDisabled:
-		errResp(c, DisabledUsed, FixDisabledUserProblem)
+		errResp(c, MsgDisabledUsed, MsgFixDisabledUserProblem)
 	case s.SEExists:
-		errResp(c, UserExists, UserExistsExpanded)
+		errResp(c, MsgUserExists, MsgUserExistsExpanded)
 	case s.SEDBError:
-		serverErrResp(c, ServerError, TryAgain)
+		serverErrResp(c, MsgServerError, MsgTryAgain)
 	}
 }

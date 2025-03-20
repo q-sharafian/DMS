@@ -39,11 +39,11 @@ func (d *psqlEventDAL) CreateEvent(event *m.Event) (*m.ID, error) {
 	result := d.db.Create(&newEvent)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to create event for job-position-id %s (%s)", newEvent.CreatedByID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to create event for job-position-id %s (%s)", newEvent.CreatedByID.ToString(), result.Error.Error())
 		return nil, result.Error
 	} else if result.RowsAffected < 1 {
 		d.logger.Debugf(`It seems can't create event for user-id %s. Total rows 
-				created are %d"`, newEvent.CreatedByID.ToInt64(), result.RowsAffected)
+				created are %d"`, newEvent.CreatedByID.ToString(), result.RowsAffected)
 		return nil, e.NewSError("couldn't create event")
 	}
 	return dbID2ModelID(&newEvent.ID), nil
@@ -57,7 +57,7 @@ func (d *psqlEventDAL) GetNLastEventsByJPID(jPID m.ID, n int) (*[]m.Event, error
 	}).Find(&events)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get %d events for job-position-id %d (%s)", n, jPID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to get %s events for job-position-id %d (%s)", n, jPID.ToString(), result.Error.Error())
 		return nil, result.Error
 	}
 	return dbEvents2ModelEvents(events), nil
@@ -79,7 +79,7 @@ func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&eventID)},
 	}).Find(event)
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get event by id %d (%s)", eventID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to get event by id %s (%s)", eventID.ToString(), result.Error.Error())
 		return nil, result.Error
 	}
 	return dbEvent2ModelEvent(event), nil

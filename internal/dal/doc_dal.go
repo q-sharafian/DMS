@@ -8,7 +8,7 @@ import (
 
 type DocDAL interface {
 	// Create doc and return its id
-	CreateDoc(doc *m.Doc) (m.ID, error)
+	CreateDoc(doc *m.Doc) (*m.ID, error)
 	// Get n "last" docs by the event id.
 	GetNLastDocByEventID(eventID m.ID, n int) (*[]m.Doc, error)
 	// Get latest created document of event with event_id by user_id. Then return that
@@ -26,7 +26,7 @@ func newPsqlDocDAL(db *db.PSQLDB, logger l.Logger) *psqlDocDAL {
 	return &psqlDocDAL{db, logger}
 }
 
-func (d *psqlDocDAL) CreateDoc(doc *m.Doc) (m.ID, error) {
+func (d *psqlDocDAL) CreateDoc(doc *m.Doc) (*m.ID, error) {
 	newDoc := db.Doc{
 		CreatedByID: *modelID2DBID(&doc.CreatedBy),
 		EventID:     *modelID2DBID(&doc.EventID),
@@ -36,10 +36,10 @@ func (d *psqlDocDAL) CreateDoc(doc *m.Doc) (m.ID, error) {
 	result := d.db.Create(&newDoc)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to create doc for user-id %d (%s)", newDoc.CreatedByID.ToInt64(), result.Error.Error())
-		return m.NilID, result.Error
+		d.logger.Debugf("Failed to create doc for user-id %s (%s)", newDoc.CreatedByID.ToString(), result.Error.Error())
+		return nil, result.Error
 	}
-	return *dbID2ModelID(&newDoc.ID), nil
+	return dbID2ModelID(&newDoc.ID), nil
 }
 
 // If n be equals to -1, then return all docs
@@ -50,7 +50,7 @@ func (d *psqlDocDAL) GetNLastDocByEventID(eventID m.ID, n int) (*[]m.Doc, error)
 	).Find(&docs)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get last %d docs in the  event-id %d (%s)", n, eventID.ToInt64(), result.Error.Error())
+		d.logger.Debugf("Failed to get last %d docs in the  event-id %s (%s)", n, eventID.ToString(), result.Error.Error())
 		return nil, result.Error
 	}
 

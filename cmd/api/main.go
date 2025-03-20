@@ -7,13 +7,19 @@ import (
 	"DMS/internal/logger"
 	"DMS/internal/routes"
 	"DMS/internal/services"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		panic(fmt.Sprintf("Error loading .env file: %s", err.Error()))
+	}
+
 	lgr := logger.NewSLogger(logger.Debug, nil, os.Stderr)
 
 	psqlConnDetails := db.PsqlConnDetails{
