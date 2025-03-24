@@ -1,0 +1,761 @@
+basePath: /api/v1
+definitions:
+  controllers.HttpResponse:
+    properties:
+      code:
+        description: HTTP status code
+        type: integer
+      details: {}
+      message:
+        type: string
+      type:
+        description: |-
+          Its type of response. e.g. error, warning, or success.
+          It's better to just have these three types.
+        enum:
+        - error
+        - warning
+        - success
+        type: string
+    type: object
+  controllers.idResponse:
+    properties:
+      id:
+        description: Because the UUID in the response will be an array, we use string
+          as id.
+        example: 8b2d1c6b-6c2c-4a8b-8b2d-1c6b6c2c4a8b
+        type: string
+    type: object
+  models.AdminJPWithPermission:
+    properties:
+      job_position:
+        $ref: '#/definitions/models.AdminJobPosition'
+      permission:
+        $ref: '#/definitions/models.Permission'
+    required:
+    - job_position
+    - permission
+    type: object
+  models.AdminJobPosition:
+    properties:
+      created_at:
+        description: The time the JP is created with UTC timezone and unix timestamp
+          in seconds.
+        example: 1641011200
+        type: integer
+      id:
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      region_id:
+        description: The region the JP belongs to
+        example: b11c9be1-b619-4ef5-be1b-a1cd9ef265b7
+        type: string
+      title:
+        example: معاون مدرسه
+        type: string
+      user_id:
+        description: ID of the user the JP is for that.
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+    required:
+    - title
+    - user_id
+    type: object
+  models.AdminUser:
+    properties:
+      id:
+        description: ID of the admin user
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      is_disabled:
+        allOf:
+        - $ref: '#/definitions/models.Disability'
+        description: |-
+          * 0: enabled user
+          * 1: disabled user
+        enum:
+        - 0
+        - 1
+        example: 0
+      name:
+        example: John Doe
+        type: string
+      phone_number:
+        example: "9171234567"
+        type: string
+    required:
+    - name
+    - phone_number
+    type: object
+  models.Disability:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - IsNotDisabled
+    - IsDisabled
+  models.Doc:
+    properties:
+      context:
+        example: some context
+        type: string
+      created_at:
+        description: The time the document is created. It's in UTC time zone and Unix
+          timestamp. (in seconds)
+        example: 1641011200
+        type: integer
+      created_by:
+        description: The id of job position who created the document
+        example: 54a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      event_id:
+        description: The id of event the document is for that
+        example: 32a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      id:
+        example: 20354d7a-e4fe-47af-8ff6-187bca92f3f9
+        type: string
+      media_paths:
+        description: Contains path of multimedia files in the document. (If there's
+          in the document)
+        items:
+          $ref: '#/definitions/models.MediaPath'
+        type: array
+    required:
+    - created_by
+    - event_id
+    type: object
+  models.Event:
+    properties:
+      created_at:
+        description: Date when the event is created. Based on UTC time zone and Unix
+          timestamp. (In seconds)
+        type: integer
+      created_by:
+        description: ID of job position wants to create event
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      description:
+        type: string
+      id:
+        example: 76a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      name:
+        description: event name
+        type: string
+      updated_at:
+        description: |-
+          Date when the event is updated. Based on UTC time zone and Unix timestamp. (In seconds)
+          If it is nil, means the event is not updated.
+        type: integer
+    required:
+    - name
+    type: object
+  models.MediaPath:
+    properties:
+      file_name:
+        description: Just contains filename and its type
+        type: string
+      media_type:
+        $ref: '#/definitions/models.MediaType'
+      src:
+        description: Full path and file name (contains type too)
+        type: string
+    type: object
+  models.MediaType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - MediaImage
+    - MediaVideo
+    - MediaAudio
+  models.Permission:
+    properties:
+      is_allow_create_jp:
+        description: Does the current job position is allowed to create a job position
+          as child of himself?
+        type: boolean
+    required:
+    - is_allow_create_jp
+    type: object
+  models.PhoneBasedLoginInfo:
+    properties:
+      phone_number:
+        example: "9171234567"
+        type: string
+      user_agent:
+        description: Details of the device from which the user logged in.
+        example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
+          like Gecko) Chrome/89.0.142.86 Safari/537.36
+        type: string
+    required:
+    - phone_number
+    - user_agent
+    type: object
+  models.User:
+    properties:
+      created_by:
+        description: The id of job position created this user
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      id:
+        description: ID of the user
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      is_disabled:
+        allOf:
+        - $ref: '#/definitions/models.Disability'
+        description: |-
+          * 0: enabled user
+          * 1: disabled user
+        example: 0
+      name:
+        example: John Doe
+        type: string
+      phone_number:
+        example: "9171234567"
+        type: string
+    required:
+    - name
+    - phone_number
+    type: object
+  models.UserJPWithPermission:
+    properties:
+      job_position:
+        $ref: '#/definitions/models.UserJobPosition'
+      permission:
+        $ref: '#/definitions/models.Permission'
+    required:
+    - job_position
+    - permission
+    type: object
+  models.UserJobPosition:
+    properties:
+      created_at:
+        description: The time the JP is created with UTC timezone and unix timestamp
+          in seconds.
+        example: 1641011200
+        type: integer
+      id:
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      parent_id:
+        example: 5abcdeff-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      region_id:
+        description: The region the JP belongs to
+        example: b11c9be1-b619-4ef5-be1b-a1cd9ef265b7
+        type: string
+      title:
+        example: معاون مدرسه
+        type: string
+      user_id:
+        description: ID of the user the JP is for that.
+        example: 6a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+    required:
+    - parent_id
+    - title
+    - user_id
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
+info:
+  contact:
+    name: Qasem Sharafian
+  description: Documentation for DMS API
+  license:
+    name: Commercial License
+  version: "1.0"
+paths:
+  /docs:
+    post:
+      consumes:
+      - application/json
+      description: Create document for specified event and current user in the current
+        time and return its id.
+      parameters:
+      - description: Doc
+        in: body
+        name: doc
+        required: true
+        schema:
+          $ref: '#/definitions/models.Doc'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success creating document. Returns the document id.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "403":
+          description: Forbidden error. The user is disabled.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "404":
+          description: Not found error. The job position doesn't belongs to current
+            user.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create document
+      tags:
+      - document
+  /events:
+    post:
+      consumes:
+      - application/json
+      description: Create event for specified job position and return its id.
+      parameters:
+      - description: Event
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/models.Event'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success creating event
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "404":
+          description: Not found error. The job position doesn't belongs to current
+            user.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create event
+      tags:
+      - event
+  /jps:
+    post:
+      description: Create a new job position for specified user. Each user job position
+        must be created with another job position.
+      parameters:
+      - description: Job position
+        in: body
+        name: jPWithPermission
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserJPWithPermission'
+      responses:
+        "200":
+          description: Job position created and response its id
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized access to resource
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create a new user job position
+      tags:
+      - job-position
+  /jps/admin:
+    post:
+      description: Create a new job position for specified user. Each Admin job position
+        is created without a job position and has no parent job position.
+      parameters:
+      - description: Job position
+        in: body
+        name: jPWithPermission
+        required: true
+        schema:
+          $ref: '#/definitions/models.AdminJPWithPermission'
+      responses:
+        "200":
+          description: Job position created and response its id
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized access to resource
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create a new job position
+      tags:
+      - job-position
+  /login/phone-based:
+    post:
+      description: Login/Create JWT with phone number only.
+      parameters:
+      - description: Phone number
+        in: body
+        name: phone
+        required: true
+        schema:
+          $ref: '#/definitions/models.PhoneBasedLoginInfo'
+      responses:
+        "200":
+          description: Success login and response created JWT token
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: User not found with such phone number
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Login/Create JWT with phone number only
+      tags:
+      - session
+  /logout:
+    post:
+      description: Logout from the current session.
+      responses:
+        "200":
+          description: Success logout
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized access to resource
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Logout
+      tags:
+      - session
+  /user/jps:
+    get:
+      description: Get user job positions
+      parameters:
+      - description: User ID
+        in: query
+        name: id
+        type: string
+      - description: User phone number
+        in: query
+        name: phone
+        type: string
+      responses:
+        "200":
+          description: Job positions
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  items:
+                    $ref: '#/definitions/models.UserJobPosition'
+                  type: array
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: Unauthorized access to resource
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Get user job positions
+      tags:
+      - job-position
+  /users/:
+    post:
+      consumes:
+      - application/json
+      description: Create a user and return its id. Each user must created by a job
+        position.
+      parameters:
+      - description: User
+        in: body
+        name: admin
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success creating admin
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "409":
+          description: This user exists previously or disabled
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create user
+      tags:
+      - user
+  /users/admin:
+    post:
+      consumes:
+      - application/json
+      description: Create admin user and return its id. Admin users are users that
+        don't have created by any user.
+      parameters:
+      - description: AdminUser
+        in: body
+        name: adminUser
+        required: true
+        schema:
+          $ref: '#/definitions/models.AdminUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success creating admin
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/controllers.idResponse'
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "409":
+          description: This user exists previously or disabled
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      summary: Create admin
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

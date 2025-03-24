@@ -11,16 +11,44 @@ import (
 	"os"
 	"time"
 
+	_ "DMS/docs/api"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+// @version         1.0
+// @description     Documentation for DMS API
+
+// @contact.name   Qasem Sharafian
+
+// @license.name  Commercial License
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
+
 	if err := godotenv.Load(".env"); err != nil {
 		panic(fmt.Sprintf("Error loading .env file: %s", err.Error()))
 	}
-
 	lgr := logger.NewSLogger(logger.Debug, nil, os.Stderr)
+	if jwtPrivate, err := os.ReadFile(os.Getenv("JWT_PRIVATE_KEY_FILE_PATH")); err != nil {
+		lgr.Panic(err)
+	} else if err = os.Setenv("JWT_PRIVATE_KEY", string(jwtPrivate)); err != nil {
+		lgr.Panic(err)
+	}
+	if jwtPublic, err := os.ReadFile(os.Getenv("JWT_PUBLIC_KEY_FILE_PATH")); err != nil {
+		lgr.Panic(err)
+	} else if err = os.Setenv("JWT_PUBLIC_KEY", string(jwtPublic)); err != nil {
+		lgr.Panic(err)
+	}
 
 	psqlConnDetails := db.PsqlConnDetails{
 		Host: "localhost",
@@ -39,6 +67,6 @@ func main() {
 
 	router := gin.Default()
 	routes.SetupRouter(router, httpController)
-	router.Run(":8080")
+	router.Run(fmt.Sprintf(":%s", os.Getenv("GIN_PORT")))
 
 }

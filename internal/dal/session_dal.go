@@ -11,11 +11,12 @@ type SessionDAL interface {
 	// Create a login for specified user and return its id
 	CreateSession(loginInfo *m.Session) (*m.ID, error)
 	// Delete a session by sessionID
-	DeleteSession(sessionID m.ID) error
+	// If the session was successfully deleted, return (true, nil). If an error occurred, return (false, error).
+	// and if the session was previously deactivated/deleted or it does not exist, return (false, nill).
+	DeleteSession(sessionID m.ID) (bool, error)
 	// Returns true if the id of the user who owns the specified session matches the claimed user id.
 	IsMatchSessionUserID(sessionID, claimedUserID m.ID) (bool, error)
-	// If both error and session be nil, means there's not any matched session or
-	// it's disabled/deleted.
+	// Return fetched session
 	GetSessionByID(sessionID m.ID) (*m.Session, error)
 }
 
@@ -40,14 +41,19 @@ func (p *psqlSessionDAL) CreateSession(loginInfo *m.Session) (*m.ID, error) {
 	return dbID2ModelID(&session.ID), nil
 }
 
-func (p *psqlSessionDAL) DeleteSession(userID m.ID) error {
+func (p *psqlSessionDAL) DeleteSession(sessionID m.ID) (bool, error) {
 	result := p.db.Where(&db.Session{
-		BaseModel: db.BaseModel{ID: *modelID2DBID(&userID)}}).
+		BaseModel: db.BaseModel{ID: *modelID2DBID(&sessionID)}}).
 		Delete(&db.Session{})
 	if result.Error != nil {
-		return fmt.Errorf("failed to delete session for userID %s (%s)", userID.ToString(), result.Error)
+		return false, fmt.Errorf("failed to delete session for sessionID %s (%s)", sessionID.ToString(), result.Error)
+	} else if result.RowsAffected < 1 {
+		return false, nil
+	} else if result.RowsAffected >= 1 {
+		return true, nil
 	}
-	return nil
+	p.logger.Panicf("Unpredicted behaviour in deleting session for sessionID %s (%s)", sessionID.ToString(), result.Error)
+	return false, nil
 }
 
 func (p *psqlSessionDAL) IsMatchSessionUserID(sessionID, claimedUserID m.ID) (bool, error) {
@@ -65,7 +71,7 @@ func (p *psqlSessionDAL) GetSessionByID(sessionID m.ID) (*m.Session, error) {
 	var session db.Session
 	result := p.db.Where(&db.Session{
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&sessionID)}}).
-		Find(&session)
+		Unscoped().Find(&session)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get session by id %s (%s)", sessionID.ToString(), result.Error)
 	} else if result.RowsAffected == 0 {

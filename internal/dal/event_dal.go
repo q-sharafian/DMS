@@ -86,13 +86,14 @@ func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
 }
 
 func dbEvent2ModelEvent(event *db.Event) *m.Event {
+	updatedAt := event.UpdatedAt.UTC().Unix()
 	return &m.Event{
 		ID:          *dbID2ModelID(&event.ID),
 		Name:        event.Name,
 		CreatedBy:   *dbID2ModelID(&event.CreatedByID),
 		Description: event.Description,
-		CreatedAt:   event.CreatedAt,
-		UpdatedAt:   event.UpdatedAt,
+		CreatedAt:   event.CreatedAt.UTC().Unix(),
+		UpdatedAt:   &updatedAt,
 	}
 }
 

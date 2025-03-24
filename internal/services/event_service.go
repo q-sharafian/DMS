@@ -13,8 +13,8 @@ type EventService interface {
 	// Each job position could create an event.
 	//
 	// Possible error codes:
-	// SEDBError
-	CreateEvent(event m.Event) (*m.ID, *e.Error)
+	// SEDBError- SENotFound
+	CreateEvent(event m.Event, userID m.ID) (*m.ID, *e.Error)
 	// Return job position id that created the event. He's owner of specified event.
 	// If no error occurs and returned event id is nil, then there is no corresponding
 	// event with this id.
@@ -28,17 +28,25 @@ type EventService interface {
 // This implementation has minimum functionalities.
 type sEventService struct {
 	event  dal.EventDAL
+	jp     JPService
 	logger l.Logger
 }
 
 // Possible error codes:
 // DBError
-func (s *sEventService) CreateEvent(event m.Event) (*m.ID, *e.Error) {
+func (s *sEventService) CreateEvent(event m.Event, userID m.ID) (*m.ID, *e.Error) {
+	if isExistsUser, err := s.jp.IsExistsUserWithJP(userID, event.CreatedBy); err != nil {
+		return nil, e.NewErrorP("error in checking if user exists: %s", SEDBError, err.Error())
+	} else if !isExistsUser {
+		return nil, e.NewErrorP("There's not any user with id %s have job position id %s",
+			SENotFound, userID.ToString(), event.CreatedBy.ToString())
+	}
+
 	newEvent := m.Event{
 		Name:        event.Name,
 		CreatedBy:   event.CreatedBy,
 		Description: event.Description,
-		CreatedAt:   time.Now(),
+		CreatedAt:   time.Now().UTC().Unix(),
 	}
 	eventID, err := s.event.CreateEvent(&newEvent)
 	if err != nil {
@@ -59,9 +67,10 @@ func (s *sEventService) GetEventOwner(eventID m.ID) (*m.ID, *e.Error) {
 }
 
 // Create an instance of sEventService struct
-func newSEventService(event dal.EventDAL, logger l.Logger) EventService {
+func newSEventService(event dal.EventDAL, jp JPService, logger l.Logger) EventService {
 	return &sEventService{
 		event,
+		jp,
 		logger,
 	}
 }

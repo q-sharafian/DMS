@@ -10,7 +10,7 @@ type serviceErrorCode int
 
 // List of error codes for methods in the services package
 const (
-	// The user is disabled and can't request anything
+	// The user or other entity is disabled and can't request anything
 	SEIsDisabled serviceErrorCode = 0
 	// The entity is exists previously
 	SEExists = 1
@@ -30,6 +30,10 @@ const (
 	SEAuthFailed = 8
 	// The user has logged out of the session or the session has been disabled for some reason.
 	SESessionExpired = 9
+	// Error during encoding an entity
+	SEEncodingError = 10
+	// The entity deleted previously
+	SEDeletedPreviously = 11
 )
 
 type Service struct {
@@ -44,12 +48,13 @@ type Service struct {
 // Create a new simple service
 func NewSService(dal *dal.DAL, logger l.Logger) Service {
 	permission := newSPermissionService(dal.Permission, logger)
-	event := newSEventService(dal.Event, logger)
+	jp := newSJPService(dal.JP, logger)
+	event := newSEventService(dal.Event, jp, logger)
 
 	s := Service{
-		Doc:        newSDocService(dal.Doc, permission, event, logger),
+		Doc:        newSDocService(dal.Doc, permission, event, jp, logger),
 		Event:      event,
-		JP:         newSJPService(dal.JP, logger),
+		JP:         jp,
 		User:       newSUserService(dal.User, dal.JP, logger),
 		Permission: permission,
 		Session:    newSSessionService(dal.Session, dal.User, logger),

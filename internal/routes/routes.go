@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // In general, it's better to return json as the details field of the response if
@@ -14,22 +16,24 @@ func SetupRouter(router *gin.Engine, ctr c.HttpConrtoller) {
 	apiV1NeedNotAuth(router, ctr)
 
 	router.GET("/health", healthCheck)
+	// Open this path to see documentaion=> /swagger/index.html
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
-
 func apiV1NeedAuth(router *gin.Engine, ctr c.HttpConrtoller) {
 	routerV1 := router.Group("api/v1")
 	routerV1.Use(ctr.Middleware.Authentication)
 
 	routerV1.POST("/users", ctr.User.CreateUser)
-	routerV1.POST("/jps", ctr.JP.CreateJP)
-	// Return job position list of the specified user id
-	routerV1.GET("/users/:id/jp", ctr.JP.GetUserJPs)
+	routerV1.POST("/jps", ctr.JP.CreateUserJP)
+	routerV1.POST("/jps/admin", ctr.JP.CreateAdminJP)
+	routerV1.GET("/user/jps", ctr.JP.GetUserJPs)
 	// Create an event.
 	// If response http code be 200, then return json as details field of the response.
 	routerV1.POST("/events", ctr.Event.CreateEvent)
 	routerV1.POST("/docs", ctr.Doc.CreateDoc)
 	// This route have the "count" query parameter
 	routerV1.GET("/docs/event/:id", ctr.Doc.GetNLastDocsByEventID)
+	routerV1.POST("/logout", ctr.Session.Logout)
 	// router.GET("/users/:id", controller.GetUser)
 	// router.GET("/products", controllers.GetProducts) //Example of a different controller.
 }

@@ -17,7 +17,7 @@ type Graph map[ID]*[]ID
 // List of some permission the job position could have
 type Permission struct {
 	// Does the current job position is allowed to create a job position as child of himself?
-	IsAllowCreateJP bool `json:"is_allow_create_jp"`
+	IsAllowCreateJP bool `json:"is_allow_create_jp" validate:"required"`
 }
 
 type HierarchyTree struct {

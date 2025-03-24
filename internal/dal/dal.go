@@ -10,7 +10,7 @@ import (
 // If input be nil, return nil
 func dbID2ModelID(id *db.ID) *m.ID {
 	if id == nil {
-		return nil
+		return &m.NilID
 	}
 	a := m.ID(*id)
 	return &a
@@ -18,7 +18,7 @@ func dbID2ModelID(id *db.ID) *m.ID {
 
 // If input be nil, return nil
 func modelID2DBID(id *m.ID) *db.ID {
-	if id == nil {
+	if id == nil || id.IsNil() {
 		return nil
 	}
 	a := db.ID(*id)
@@ -51,6 +51,15 @@ func dbDisability2ModelDisability(userStatus db.Disability) m.Disability {
 		return m.IsDisabled
 	} else if userStatus == db.IsNotDisabled {
 		return m.IsNotDisabled
+	}
+	panic(fmt.Sprintf("unknown user status: %d", userStatus))
+}
+
+func modelDisability2DBDisability(userStatus m.Disability) db.Disability {
+	if userStatus == m.IsDisabled {
+		return db.IsDisabled
+	} else if userStatus == m.IsNotDisabled {
+		return db.IsNotDisabled
 	}
 	panic(fmt.Sprintf("unknown user status: %d", userStatus))
 }

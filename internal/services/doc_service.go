@@ -8,13 +8,13 @@ import (
 )
 
 type DocService interface {
-	// Create document for specified event in the current time and return its id.
+	// Create document for specified event and job position in the current time and return its id.
 	// At this stage, just the user created the event, could create document for the event.
 	//
 	// Possible error codes:
 	// SEDBError- SEIsDisabled
 	// TODO: implement SEIsDisabled
-	CreateDoc(doc *m.Doc) (*m.ID, *e.Error)
+	CreateDoc(doc *m.Doc, userID m.ID) (*m.ID, *e.Error)
 	// Return n last docs by event id iff job position id have permission to read
 	// docs of the event. If eventCreatedByID be nil, we fetch event creator id from
 	// the database so for better performance, it's better to pass it to avoid more
@@ -32,12 +32,20 @@ type sDocService struct {
 	logger     l.Logger
 	permission PermissionService
 	event      EventService
+	jp         JPService
 }
 
-func (s *sDocService) CreateDoc(doc *m.Doc) (*m.ID, *e.Error) {
+func (s *sDocService) CreateDoc(doc *m.Doc, userID m.ID) (*m.ID, *e.Error) {
+	if isExistsUser, err := s.jp.IsExistsUserWithJP(userID, doc.CreatedBy); err != nil {
+		return nil, e.NewErrorP("error in checking if user exists: %s", SEDBError, err.Error())
+	} else if !isExistsUser {
+		return nil, e.NewErrorP("there's not any user with id %s that have job position id %s",
+			SENotFound, userID.ToString(), doc.CreatedBy.ToString())
+	}
+
 	eventID, err := s.doc.CreateDoc(doc)
 	if err != nil {
-		return nil, e.NewErrorP(err.Error(), SEDBError)
+		return nil, e.NewErrorP("failed to create doc: %s", SEDBError, err.Error())
 	}
 	return eventID, nil
 }
@@ -66,11 +74,12 @@ func (s *sDocService) GetNLastDocByEventID(eventID m.ID, eventCreatedByID *m.ID,
 }
 
 // Create an instance of sDocService struct
-func newSDocService(doc dal.DocDAL, permissionService PermissionService, eventService EventService, logger l.Logger) DocService {
+func newSDocService(doc dal.DocDAL, permissionService PermissionService, eventService EventService, jpService JPService, logger l.Logger) DocService {
 	return &sDocService{
 		doc,
 		logger,
 		permissionService,
 		eventService,
+		jpService,
 	}
 }

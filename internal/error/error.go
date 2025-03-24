@@ -37,7 +37,7 @@ func (e *Error) GetCode() ErrorCode {
 
 func NewError(msg string, code ErrorCode, args ...any) Error {
 	return Error{
-		message: fmt.Sprintf(msg, args),
+		message: fmt.Sprintf(msg, args...),
 		code:    code,
 	}
 }
@@ -45,7 +45,7 @@ func NewError(msg string, code ErrorCode, args ...any) Error {
 // Create an error and return pointer to that
 func NewErrorP(msg string, code ErrorCode, args ...any) *Error {
 	return &Error{
-		message: fmt.Sprintf(msg, args),
+		message: fmt.Sprintf(msg, args...),
 		code:    code,
 	}
 }

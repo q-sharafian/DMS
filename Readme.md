@@ -11,7 +11,7 @@ psql -U mohammad -d dms -h localhost -p 5432
 jwt has two header field:   
 ```js
 {
-  "alg": "HS256",
+  "alg": "RS256",
   "typ": "JWT"
 }
 ```  
@@ -29,3 +29,20 @@ and has some payload field
 }
 ```  
 The app has stateful in login/logout. It means we store the details of sessions in database.
+
+To build API documentaion, go to the root dir and then use this command:  
+`swag init -g "./cmd/api/main.go" -o "./docs/api"`  
+To see the documentation, go to path `/swagger/index.html`.  
+
+All time zones must be UTC.
+
+
+**How to setup the app:**  
+1) Create a RSA public and private key pair to used for JWT.  
+To do, run the following command in the project root:  
+```
+openssl genrsa -out certs/jwt_keypair.pem 2048
+openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
+openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
+```
+

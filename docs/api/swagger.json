@@ -1,0 +1,1256 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Documentation for DMS API",
+        "contact": {
+            "name": "Qasem Sharafian"
+        },
+        "license": {
+            "name": "Commercial License"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/docs": {
+            "post": {
+                "description": "Create document for specified event and current user in the current time and return its id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "document"
+                ],
+                "summary": "Create document",
+                "parameters": [
+                    {
+                        "description": "Doc",
+                        "name": "doc",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Doc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success creating document. Returns the document id.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden error. The user is disabled.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not found error. The job position doesn't belongs to current user.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/events": {
+            "post": {
+                "description": "Create event for specified job position and return its id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "event"
+                ],
+                "summary": "Create event",
+                "parameters": [
+                    {
+                        "description": "Event",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Event"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success creating event",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not found error. The job position doesn't belongs to current user.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/jps": {
+            "post": {
+                "description": "Create a new job position for specified user. Each user job position must be created with another job position.",
+                "tags": [
+                    "job-position"
+                ],
+                "summary": "Create a new user job position",
+                "parameters": [
+                    {
+                        "description": "Job position",
+                        "name": "jPWithPermission",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UserJPWithPermission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job position created and response its id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access to resource",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/jps/admin": {
+            "post": {
+                "description": "Create a new job position for specified user. Each Admin job position is created without a job position and has no parent job position.",
+                "tags": [
+                    "job-position"
+                ],
+                "summary": "Create a new job position",
+                "parameters": [
+                    {
+                        "description": "Job position",
+                        "name": "jPWithPermission",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AdminJPWithPermission"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job position created and response its id",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access to resource",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/login/phone-based": {
+            "post": {
+                "description": "Login/Create JWT with phone number only.",
+                "tags": [
+                    "session"
+                ],
+                "summary": "Login/Create JWT with phone number only",
+                "parameters": [
+                    {
+                        "description": "Phone number",
+                        "name": "phone",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PhoneBasedLoginInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success login and response created JWT token",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "User not found with such phone number",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "description": "Logout from the current session.",
+                "tags": [
+                    "session"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "200": {
+                        "description": "Success logout",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access to resource",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/jps": {
+            "get": {
+                "description": "Get user job positions",
+                "tags": [
+                    "job-position"
+                ],
+                "summary": "Get user job positions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User phone number",
+                        "name": "phone",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job positions",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.UserJobPosition"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access to resource",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/users/": {
+            "post": {
+                "description": "Create a user and return its id. Each user must created by a job position.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create user",
+                "parameters": [
+                    {
+                        "description": "User",
+                        "name": "admin",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success creating admin",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "This user exists previously or disabled",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/users/admin": {
+            "post": {
+                "description": "Create admin user and return its id. Admin users are users that don't have created by any user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create admin",
+                "parameters": [
+                    {
+                        "description": "AdminUser",
+                        "name": "adminUser",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.AdminUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success creating admin",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "$ref": "#/definitions/controllers.idResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "409": {
+                        "description": "This user exists previously or disabled",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "controllers.HttpResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "HTTP status code",
+                    "type": "integer"
+                },
+                "details": {},
+                "message": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Its type of response. e.g. error, warning, or success.\nIt's better to just have these three types.",
+                    "type": "string",
+                    "enum": [
+                        "error",
+                        "warning",
+                        "success"
+                    ]
+                }
+            }
+        },
+        "controllers.idResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "description": "Because the UUID in the response will be an array, we use string as id.",
+                    "type": "string",
+                    "example": "8b2d1c6b-6c2c-4a8b-8b2d-1c6b6c2c4a8b"
+                }
+            }
+        },
+        "models.AdminJPWithPermission": {
+            "type": "object",
+            "required": [
+                "job_position",
+                "permission"
+            ],
+            "properties": {
+                "job_position": {
+                    "$ref": "#/definitions/models.AdminJobPosition"
+                },
+                "permission": {
+                    "$ref": "#/definitions/models.Permission"
+                }
+            }
+        },
+        "models.AdminJobPosition": {
+            "type": "object",
+            "required": [
+                "title",
+                "user_id"
+            ],
+            "properties": {
+                "created_at": {
+                    "description": "The time the JP is created with UTC timezone and unix timestamp in seconds.",
+                    "type": "integer",
+                    "example": 1641011200
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "region_id": {
+                    "description": "The region the JP belongs to",
+                    "type": "string",
+                    "example": "b11c9be1-b619-4ef5-be1b-a1cd9ef265b7"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "معاون مدرسه"
+                },
+                "user_id": {
+                    "description": "ID of the user the JP is for that.",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                }
+            }
+        },
+        "models.AdminUser": {
+            "type": "object",
+            "required": [
+                "name",
+                "phone_number"
+            ],
+            "properties": {
+                "id": {
+                    "description": "ID of the admin user",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "is_disabled": {
+                    "description": "* 0: enabled user\n* 1: disabled user",
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Disability"
+                        }
+                    ],
+                    "example": 0
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "9171234567"
+                }
+            }
+        },
+        "models.Disability": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "IsNotDisabled",
+                "IsDisabled"
+            ]
+        },
+        "models.Doc": {
+            "type": "object",
+            "required": [
+                "created_by",
+                "event_id"
+            ],
+            "properties": {
+                "context": {
+                    "type": "string",
+                    "example": "some context"
+                },
+                "created_at": {
+                    "description": "The time the document is created. It's in UTC time zone and Unix timestamp. (in seconds)",
+                    "type": "integer",
+                    "example": 1641011200
+                },
+                "created_by": {
+                    "description": "The id of job position who created the document",
+                    "type": "string",
+                    "example": "54a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "event_id": {
+                    "description": "The id of event the document is for that",
+                    "type": "string",
+                    "example": "32a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "20354d7a-e4fe-47af-8ff6-187bca92f3f9"
+                },
+                "media_paths": {
+                    "description": "Contains path of multimedia files in the document. (If there's in the document)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MediaPath"
+                    }
+                }
+            }
+        },
+        "models.Event": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "created_at": {
+                    "description": "Date when the event is created. Based on UTC time zone and Unix timestamp. (In seconds)",
+                    "type": "integer"
+                },
+                "created_by": {
+                    "description": "ID of job position wants to create event",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "76a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "name": {
+                    "description": "event name",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Date when the event is updated. Based on UTC time zone and Unix timestamp. (In seconds)\nIf it is nil, means the event is not updated.",
+                    "type": "integer"
+                }
+            }
+        },
+        "models.MediaPath": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "description": "Just contains filename and its type",
+                    "type": "string"
+                },
+                "media_type": {
+                    "$ref": "#/definitions/models.MediaType"
+                },
+                "src": {
+                    "description": "Full path and file name (contains type too)",
+                    "type": "string"
+                }
+            }
+        },
+        "models.MediaType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "MediaImage",
+                "MediaVideo",
+                "MediaAudio"
+            ]
+        },
+        "models.Permission": {
+            "type": "object",
+            "required": [
+                "is_allow_create_jp"
+            ],
+            "properties": {
+                "is_allow_create_jp": {
+                    "description": "Does the current job position is allowed to create a job position as child of himself?",
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.PhoneBasedLoginInfo": {
+            "type": "object",
+            "required": [
+                "phone_number",
+                "user_agent"
+            ],
+            "properties": {
+                "phone_number": {
+                    "type": "string",
+                    "example": "9171234567"
+                },
+                "user_agent": {
+                    "description": "Details of the device from which the user logged in.",
+                    "type": "string",
+                    "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "required": [
+                "name",
+                "phone_number"
+            ],
+            "properties": {
+                "created_by": {
+                    "description": "The id of job position created this user",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "id": {
+                    "description": "ID of the user",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "is_disabled": {
+                    "description": "* 0: enabled user\n* 1: disabled user",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.Disability"
+                        }
+                    ],
+                    "example": 0
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "9171234567"
+                }
+            }
+        },
+        "models.UserJPWithPermission": {
+            "type": "object",
+            "required": [
+                "job_position",
+                "permission"
+            ],
+            "properties": {
+                "job_position": {
+                    "$ref": "#/definitions/models.UserJobPosition"
+                },
+                "permission": {
+                    "$ref": "#/definitions/models.Permission"
+                }
+            }
+        },
+        "models.UserJobPosition": {
+            "type": "object",
+            "required": [
+                "parent_id",
+                "title",
+                "user_id"
+            ],
+            "properties": {
+                "created_at": {
+                    "description": "The time the JP is created with UTC timezone and unix timestamp in seconds.",
+                    "type": "integer",
+                    "example": 1641011200
+                },
+                "id": {
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "5abcdeff-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "region_id": {
+                    "description": "The region the JP belongs to",
+                    "type": "string",
+                    "example": "b11c9be1-b619-4ef5-be1b-a1cd9ef265b7"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "معاون مدرسه"
+                },
+                "user_id": {
+                    "description": "ID of the user the JP is for that.",
+                    "type": "string",
+                    "example": "6a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
+    }
+}

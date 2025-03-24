@@ -20,21 +20,24 @@ func newSessionHttp(sessionService s.SessionService, logger l.Logger) SessionHtt
 	}
 }
 
-// In this login method, we login just with phone number.
+// @Summary Login/Create JWT with phone number only
+// @Description Login/Create JWT with phone number only.
+// @Tags session
+// @Param phone body models.PhoneBasedLoginInfo true "Phone number"
+// @Success 200 {object} HttpResponse{details=string} "Success login and response created JWT token"
+// @Failure 500 {object} HttpResponse{details=string} "Server or database error"
+// @Failure 401 {object} HttpResponse{details=string} "User not found with such phone number"
+// @Failure 400 {object} HttpResponse{details=string} "Bad request error"
+// @Router /login/phone-based [post]
 func (h *SessionHttp) PhoneBasedLogin(c *gin.Context) {
-	type phoneBasedLogin struct {
-		m.Session
-		PhoneNumber m.PhoneNumber `json:"phone_number" validate:"required"`
-	}
-	session := phoneBasedLogin{}
+	session := m.PhoneBasedLoginInfo{}
 	if err := parseValidateJSON(c, &session, h.logger); err != nil {
 		return
 	}
-
-	id, err := h.sessionService.CreateSessionJustByPhone(&session.Session, session.PhoneNumber)
+	token, err := h.sessionService.CreateSessionJustByPhone(&session)
 	if err == nil {
-		h.logger.Debugf("Created session with id %s.", id.ToString())
-		successResp(c, MsgSuccessfulLogin, newIDResponse(*id))
+		h.logger.Debugf("Created session with user-agent %s.", session.UserAgent)
+		successResp(c, MsgSuccessfulLogin, token)
 		return
 	}
 	switch code := err.GetCode(); code {
@@ -43,12 +46,23 @@ func (h *SessionHttp) PhoneBasedLogin(c *gin.Context) {
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	case s.SENotFound:
 		unauthorizedResp(c, MsgAuthNotFound, MsgReferAdmin)
+	case s.SEEncodingError:
+		h.logger.Debugf("Failed to create session: %s", err.Error())
+		serverErrResp(c, MsgServerError, MsgTryAgain)
 	default:
 		h.logger.Errorf("Unexpected error code %d (%s)", code, err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	}
 }
 
+// @Summary Logout
+// @Description Logout from the current session.
+// @Tags session
+// @Success 200 {object} HttpResponse{details=string} "Success logout"
+// @Failure 500 {object} HttpResponse{details=string} "Server or database error"
+// @Failure 401 {object} HttpResponse{details=string} "Unauthorized access to resource"
+// @Failure 400 {object} HttpResponse{details=string} "Bad request error"
+// @Router /logout [post]
 func (h *SessionHttp) Logout(c *gin.Context) {
 	jwt := getJWT(c, h.logger)
 	if jwt == nil {
@@ -57,13 +71,19 @@ func (h *SessionHttp) Logout(c *gin.Context) {
 	err := h.sessionService.DeleteSession(jwt)
 	if err == nil {
 		h.logger.Debugf("Deleted session with id %s.", jwt.JTI.ToString())
-		successResp(c, MsgSuccessfulLogout, "")
+		successResp(c, MsgSuccessfulLogout, MsgSuccessfulLogout)
 		return
 	}
 	switch code := err.GetCode(); code {
 	case s.SEDBError:
 		h.logger.Errorf("Failed to delete session (%s)", err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
+	case s.SENotFound:
+		h.logger.Debugf("The session with id %s was not found. (%s)", jwt.JTI.ToString(), err.Error())
+		unauthorizedResp(c, MsgSessionNotFound, MsgSessionNotFound)
+	case s.SEDeletedPreviously:
+		h.logger.Debugf("The session with id %s was deleted/deactivated previously. (%s)", jwt.JTI.ToString(), err.Error())
+		unauthorizedResp(c, MsgSessionNotFound, MsgDeletedSessionPreviously)
 	default:
 		h.logger.Errorf("Unexpected error code %d (%s)", code, err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)

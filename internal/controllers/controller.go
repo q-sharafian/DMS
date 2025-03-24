@@ -5,6 +5,7 @@ import (
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	s "DMS/internal/services"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,20 +19,14 @@ var validate *validator.Validate
 // init function in GO runs once per package within a module before the main function.
 func init() {
 	validate = validator.New()
-	validate.RegisterValidation("uuidv4", validateUUIDv4)
-}
-
-func validateUUIDv4(fl validator.FieldLevel) bool {
-	if _, err := uuid.Parse(fl.Field().String()); err != nil {
-		return false
-	}
-	return true
+	validate.RegisterValidation("uuidv4", m.ValidateUUIDv4)
 }
 
 type HttpResponse struct {
 	// Its type of response. e.g. error, warning, or success.
 	// It's better to just have these three types.
-	Type    string `json:"type"`
+	Type string `json:"type" enums:"error,warning,success"`
+	// HTTP status code
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Details any    `json:"details,omitempty"`
@@ -63,30 +58,36 @@ func NewHttpController(services s.Service, logger l.Logger) HttpConrtoller {
 
 // Postfix "C" means it's more complete comment compared to its pair without postfix "C"
 // and these complete comment have format specifier and must be used with something
-// like fmt.Printf() functions.
+// like fmt.Sprintf() function.
 const (
-	MsgBadJsonStruct          = "ساختار داده ورودی اشتباه است"
-	MsgBadValue               = "مقدار ورودی اشتباه است"
-	MsgParsingError           = "خطایی در هنگام تجزیه رخ داد"
-	MsgServerError            = "خطایی در سمت سرور رخ داد"
-	MsgDisabledUserC          = "کاربر %s غیر فعال شده است"
-	MsgDisabledUsed           = "کاربر غیر فعال شده است"
-	MsgFixDisabledUserProblem = "جهت رفع اشکال به سرپرست مراجعه کنید"
-	MsgUserExists             = "کاربر از قبل وجود دارد"
-	MsgUserExistsExpanded     = "کاربری با این شماره تلفن که قصد ساخت آن را دارید از قبل وجود دارد"
-	MsgTryAgain               = "لطفا مجددا تلاش نمایید"
-	MsgUserCreated            = "کاربر جدید با موفقیت ساخته شد"
-	MsgAdminCreated           = "مدیر جدید با موفقیت ساخته شد"
-	MsgFailedCreatingUser     = "ساخت کاربر جدید با خطا مواجه شد"
-	MsgJPCreated              = "سمت جدید با موفقیت ساخته شد"
-	MsgSuccessAction          = "عملیات با موفقیت انجام شد"
-	MsgEventCreated           = "رویداد با موفقیت ایجاد شد"
-	MsgDocCreated             = "مستند با موفقیت ایجاد شد"
-	MsgAuthFailed             = "احراز هویت ناموفق"
-	MsgAuthNotFound           = "کاربر و یا سمت شغلی مورد نظر موجود نیست"
-	MsgReferAdmin             = "برای رفع اشکال پشتیبانی مراجعه کنید"
-	MsgSuccessfulLogin        = "ورود با موفقیت انجام شد"
-	MsgSuccessfulLogout       = "با موفقیت از حساب خارج شدید"
+	MsgBadJsonStruct            = "ساختار داده ورودی اشتباه است"
+	MsgBadValue                 = "مقدار ورودی اشتباه است"
+	MsgParsingError             = "خطایی در هنگام تجزیه رخ داد"
+	MsgServerError              = "خطایی در سمت سرور رخ داد"
+	MsgDisabledUserC            = "کاربر %s غیر فعال شده است"
+	MsgDisabledUser             = "کاربر غیر فعال شده است"
+	MsgFixDisabledUserProblem   = "جهت رفع اشکال به سرپرست مراجعه کنید"
+	MsgUserExists               = "کاربر از قبل وجود دارد"
+	MsgUserExistsExpanded       = "کاربری با این شماره تلفن که قصد ساخت آن را دارید از قبل وجود دارد"
+	MsgTryAgain                 = "لطفا مجددا تلاش نمایید"
+	MsgUserCreated              = "کاربر جدید با موفقیت ساخته شد"
+	MsgAdminCreated             = "مدیر جدید با موفقیت ساخته شد"
+	MsgFailedCreatingUser       = "ساخت کاربر جدید با خطا مواجه شد"
+	MsgJPCreated                = "سمت جدید با موفقیت ساخته شد"
+	MsgSuccessAction            = "عملیات با موفقیت انجام شد"
+	MsgEventCreated             = "رویداد با موفقیت ایجاد شد"
+	MsgDocCreated               = "مستند با موفقیت ایجاد شد"
+	MsgAuthFailed               = "احراز هویت ناموفق"
+	MsgAuthNotFound             = "کاربر و یا سمت شغلی مورد نظر موجود نیست"
+	MsgReferAdmin               = "برای رفع اشکال پشتیبانی مراجعه کنید"
+	MsgSuccessfulLogin          = "ورود با موفقیت انجام شد"
+	MsgSuccessfulLogout         = "با موفقیت از حساب خارج شدید"
+	MsgSessionNotFound          = "جلسه مورد نظر یافت نشد"
+	MsgDeletedSessionPreviously = "جلسه از قبل غیر فعال شده است"
+	MsgJPsNotFound              = "سمت شغلی یافت نشد"
+	MsgCheckInfoAgain           = "لطفا مشخصات را مجددا بررسی کنید"
+	MsgNotFoundC                = "مورد مورد نظر یافت نشد %s"
+	MsgJP                       = "سمت شغلی"
 )
 
 const authInfo = "AuthInfo"
@@ -94,7 +95,7 @@ const authInfo = "AuthInfo"
 // It's used to response just an id to the client
 type idResponse struct {
 	// Because the UUID in the response will be an array, we use string as id.
-	ID string `json:"id,omitempty"`
+	ID string `json:"id,omitempty" example:"8b2d1c6b-6c2c-4a8b-8b2d-1c6b6c2c4a8b"`
 }
 
 func newIDResponse(id m.ID) idResponse {
@@ -121,6 +122,11 @@ func successResp(c *gin.Context, message string, details any) {
 	formatResponse(c, http.StatusOK, "success", message, details)
 }
 
+// Return a JSON response with HTTP code 404 to the client that represents success.
+func notFoundResp(c *gin.Context, message string, details any) {
+	formatResponse(c, http.StatusNotFound, "error", message, details)
+}
+
 // Return a JSON response with HTTP code 200 to the client that represents warning.
 func warningResp(c *gin.Context, message string, details any) {
 	formatResponse(c, http.StatusOK, "warning", message, details)
@@ -136,14 +142,24 @@ func serverErrResp(c *gin.Context, message string, details any) {
 	formatResponse(c, http.StatusBadRequest, "error", message, details)
 }
 
+// Return a JSON response with HTTP code 403 to the client
+func forbiddenErrResp(c *gin.Context, message string, details any) {
+	formatResponse(c, http.StatusForbidden, "error", message, details)
+}
+
+// Return a JSON response with HTTP code 409 to the client
+func conflictErrResp(c *gin.Context, message string, details any) {
+	formatResponse(c, http.StatusConflict, "error", message, details)
+}
+
 // Return a JSON response with HTTP code 401 to the client
 func unauthorizedResp(c *gin.Context, message string, details any) {
 	formatResponse(c, http.StatusUnauthorized, "error", message, details)
 }
 
-// Try to parse and validate input object and return error if it's not valid.
-// If occured error during parsing or validating, return HTTP error response and create log.
-// So we don't need to send HTTP response for error.
+// Try to parse and validate input object with V10 and return error if it's not valid.
+// If occured error during parsing or validating, return HTTP bad request error (code 400)
+// response and create log. So we don't need to send HTTP response for error.
 // Example of how to use it:
 //
 //	// User is a struct with some fields. e.g. ID with type int
@@ -157,8 +173,6 @@ func parseValidateJSON(c *gin.Context, obj any, logger l.Logger) error {
 	if err := c.BindJSON(obj); err != nil {
 		logger.Debugf("Error in parsing JSON object (%s)", err.Error())
 		badRequestResp(c, MsgBadJsonStruct, MsgParsingError)
-		// id := c.Param("id")
-		// c.Status(400)
 		return e.NewSError("couldn't parse JSON object")
 	}
 	if err := validate.Struct(obj); err != nil {
@@ -198,7 +212,9 @@ func (p *parseParam) parseID(paramKey string, dest *m.ID) error {
 		badRequestResp(p.c, MsgBadValue, MsgParsingError)
 		return e.NewSError("couldn't parse ID")
 	}
-	result := m.ID{}.FromUUID(uuid)
+
+	var result m.ID
+	result.FromUUID(uuid)
 	dest = &result
 	return nil
 }
@@ -237,10 +253,7 @@ func (p *parseParam) parseInt(paramKey string, dest *int64) error {
 	return nil
 }
 
-// Parse the input HTTP query specified with the input key (contains in url) to a suitable type and return it.
-// If the value of HTTP query key be empty, return nil value and nil error. It means we suppose the queries are optional.
-// If occured error during parsing or validating, return HTTP error response and create log.
-// So we don't need to send HTTP response for errors.
+// A Parser to parse the input HTTP query specified with the input key (contains in url) to a suitable type and return it.
 type queryParser struct {
 	c      *gin.Context
 	logger l.Logger
@@ -253,67 +266,104 @@ func newQueryParser(c *gin.Context, logger l.Logger) *queryParser {
 	}
 }
 
-func (p *queryParser) parseID(queryKey string, dest *m.ID) error {
-	param := p.c.Param(queryKey)
-	if param == "" {
-		dest = nil
-		return nil
+// @Refer to ParseUInt for more details
+func (p *queryParser) ParseID(queryKey string, defaultValue *m.ID) (*m.ID, error) {
+	param, ok := p.c.GetQuery(queryKey)
+	if !ok {
+		if defaultValue != nil {
+			return defaultValue, nil
+		}
+		badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		return nil, fmt.Errorf("the input parameter and default values are empty and nil")
 	}
-	uuid, err := uuid.Parse(param)
+
+	id, err := m.ID{}.FromString2(param)
 	if err != nil {
 		p.logger.Debugf("Error in parsing id \"%s\" (%s)", param, err.Error())
-		badRequestResp(p.c, MsgBadValue, MsgParsingError)
-		return e.NewSError("couldn't parse ID")
+		if defaultValue == nil {
+			badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		}
+		return defaultValue, e.NewSError("couldn't parse ID")
 	}
-	result := m.ID{}.FromUUID(uuid)
-	dest = &result
-	return nil
+	// var result m.ID
+	// result.FromUUID(id)
+	return &id, nil
 }
 
-func (p *queryParser) parseUInt(queryKey string, dest *uint64) error {
-	param := p.c.Param(queryKey)
-	if param == "" {
-		dest = nil
-		return nil
+// If queryKey's value is empty or raises an error during parsing, set dest with the
+// default value if it's not nil and then return error and no HTTP bad request
+// response will be sent. But if it's nil, return error and HTTP bad request.
+func (p *queryParser) ParseUInt(queryKey string, defaultValue *uint64) (dest *uint64, err error) {
+	param, ok := p.c.GetQuery(queryKey)
+	if !ok {
+		if defaultValue != nil {
+			return defaultValue, nil
+		} else {
+			badRequestResp(p.c, MsgBadValue, MsgParsingError)
+			return nil, fmt.Errorf("the input parameter and default values are empty and nil")
+		}
 	}
+
 	uint, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
 		p.logger.Debugf("the input param \"%s\" must be uint but it's not. (%s)", param, err)
-		badRequestResp(p.c, MsgBadValue, MsgParsingError)
-		return e.NewSError("the input parameter must be uint but it's not")
+		if defaultValue == nil {
+			badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		}
+		return defaultValue, fmt.Errorf("the input parameter must be uint but it's not")
 	}
-	dest = &uint
-	return nil
+	return &uint, nil
 }
 
-func (p *queryParser) parseInt(queryKey string, dest *int64) error {
-	param := p.c.Param(queryKey)
-	if param == "" {
-		dest = nil
-		return nil
+// @Refer to ParseUInt for more details
+func (p *queryParser) ParseInt(queryKey string, defaultValue *int64) (*int64, error) {
+	param, ok := p.c.GetQuery(queryKey)
+	if !ok {
+		if defaultValue != nil {
+			return defaultValue, nil
+		}
+		badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		return nil, fmt.Errorf("the input parameter and default values are empty and nil.")
 	}
+
 	int, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
 		p.logger.Debugf("the input param \"%s\" must be int but it's not. (%s)", param, err)
-		badRequestResp(p.c, MsgBadValue, MsgParsingError)
-		return e.NewSError("the input parameter must be int but it's not")
+		if defaultValue == nil {
+			badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		}
+		return defaultValue, e.NewSError("the input parameter must be int but it's not")
 	}
-	dest = &int
-	return nil
+	return &int, nil
+}
+
+// @Refer to ParseUInt for more details
+func (p *queryParser) ParsePhone(queryKey string, defaultValue *m.PhoneNumber) (*m.PhoneNumber, error) {
+	param, ok := p.c.GetQuery(queryKey)
+	if !ok {
+		if defaultValue != nil {
+			return defaultValue, nil
+		}
+		badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		return nil, fmt.Errorf("the input parameter and default values are empty and nil")
+	}
+
+	phone := m.PhoneNumber(param)
+	return &phone, nil
 }
 
 // Get parsed JWT from the authentication middleware. If there's not JWT,
-// the function, sends unauthorized response to the client and returns nil.
+// the function, sends unauthorized response (code 401) to the client and returns nil.
 func getJWT(c *gin.Context, logger l.Logger) *m.JWT {
 	value, exists := c.Get(authInfo)
 	if !exists {
 		unauthorizedResp(c, MsgAuthFailed, MsgTryAgain)
-		logger.Debugf("Authentication information is not found in the context (getAuthInfo)")
+		logger.Debugf("JWT is not found in the context (getAuthInfo)")
 		return nil
 	}
-	authInfo, ok := value.(m.JWT)
+	authInfo, ok := value.(*m.JWT)
 	if !ok {
-		logger.Panicf("Authentication information type is invalid")
+		logger.Panicf("JWT type is invalid")
 	}
-	return &authInfo
+	return authInfo
 }

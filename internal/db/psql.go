@@ -207,6 +207,29 @@ func NewPsqlConn(conn *PsqlConnDetails, doAutoMigrate bool, logger l.Logger) PSQ
 	return *db
 }
 
+// Entity is a pointer to a struct
+// func CreateWhereClause(db *gorm.DB, entity any) *gorm.DB {
+// 	v := reflect.ValueOf(entity)
+// 	t := reflect.TypeOf(entity)
+// 	if v.Kind() != reflect.Struct {
+// 		return nil // Not a struct
+// 	}
+// 	// Fields that are not zero value or nil
+// 	nonZeroFields := make(map[string]interface{})
+// 	for i := 0; i < v.NumField(); i++ {
+// 		field := v.Field(i)
+// 		fieldType := t.Field(i)
+// 		if !field.IsZero() {
+// 			nonZeroFields[fieldType.Name] = field.Interface()
+// 		}
+// 	}
+
+// 	for key, value := range nonZeroFields {
+// 		db = db.Where(fmt.Sprintf("%s = ?", key), value)
+// 	}
+// 	return nonZeroFields
+// }
+
 // Migrate from schema to database and update the database scheme.
 func autoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(&User{}, &Event{}, &Doc{}, &JobPosition{}, &JPPermission{}, &HierarchyTree{},

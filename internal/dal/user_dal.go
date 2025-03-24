@@ -17,7 +17,7 @@ type UserDAL interface {
 	CreateUser(name string, phoneNumber m.PhoneNumber, createdByID *m.ID) (*m.ID, error)
 	GetUserByID(id m.ID) (*m.User, error)
 	// If both user and error be empty, means there's not any matched user.
-	GetUserByPhone(phoneNumber string) (*m.User, error)
+	GetUserByPhone(phoneNumber m.PhoneNumber) (*m.User, error)
 	// Returns true if the user is disabled.
 	IsDisabledByID(id m.ID) (bool, error)
 	IsExistUserByPhone(phoneNumber string) (bool, error)
@@ -67,9 +67,9 @@ func (d *psqlUserDAL) GetUserByID(id m.ID) (*m.User, error) {
 	return dbUser2ModelUser(&user), nil
 }
 
-func (d *psqlUserDAL) GetUserByPhone(phoneNumber string) (*m.User, error) {
+func (d *psqlUserDAL) GetUserByPhone(phoneNumber m.PhoneNumber) (*m.User, error) {
 	var user db.User
-	result := d.db.Where(&db.User{PhoneNumber: phoneNumber}).First(&user)
+	result := d.db.Where(&db.User{PhoneNumber: phoneNumber.ToString()}).Limit(1).Find(&user)
 	if result.Error != nil {
 		return nil, result.Error
 	} else if result.RowsAffected < 1 {
@@ -123,6 +123,15 @@ func dbUser2ModelUser(user *db.User) *m.User {
 		Name:        user.Name,
 		PhoneNumber: dbPhone2ModelPhone(user.PhoneNumber),
 		IsDisabled:  dbDisability2ModelDisability(user.IsDisabled),
-		CreatedBy:   *dbID2ModelID(user.CreatedByID),
+		CreatedBy:   dbID2ModelID(user.CreatedByID),
+	}
+}
+
+func modelUser2DBUser(user *m.User) *db.User {
+	return &db.User{
+		Name:        user.Name,
+		PhoneNumber: user.PhoneNumber.ToString(),
+		IsDisabled:  modelDisability2DBDisability(user.IsDisabled),
+		CreatedByID: modelID2DBID(user.CreatedBy),
 	}
 }
