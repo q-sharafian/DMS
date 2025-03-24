@@ -24,7 +24,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "BearerAuths": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Create document for specified event and current user in the current time and return its id.",
@@ -145,6 +145,11 @@ const docTemplate = `{
         },
         "/events": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create event for specified job position and return its id.",
                 "consumes": [
                     "application/json"
@@ -245,6 +250,11 @@ const docTemplate = `{
         },
         "/jps": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new job position for specified user. Each user job position must be created with another job position.",
                 "tags": [
                     "job-position"
@@ -339,6 +349,11 @@ const docTemplate = `{
         },
         "/jps/admin": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new job position for specified user. Each Admin job position is created without a job position and has no parent job position.",
                 "tags": [
                     "job-position"
@@ -433,6 +448,11 @@ const docTemplate = `{
         },
         "/login/phone-based": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Login/Create JWT with phone number only.",
                 "tags": [
                     "session"
@@ -527,6 +547,11 @@ const docTemplate = `{
         },
         "/logout": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Logout from the current session.",
                 "tags": [
                     "session"
@@ -610,6 +635,11 @@ const docTemplate = `{
         },
         "/user/jps": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get user job positions",
                 "tags": [
                     "job-position"
@@ -710,6 +740,11 @@ const docTemplate = `{
         },
         "/users/": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a user and return its id. Each user must created by a job position.",
                 "consumes": [
                     "application/json"
@@ -810,6 +845,11 @@ const docTemplate = `{
         },
         "/users/admin": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create admin user and return its id. Admin users are users that don't have created by any user.",
                 "consumes": [
                     "application/json"
@@ -1255,7 +1295,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BearerAuths": {
+        "BearerAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

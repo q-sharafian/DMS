@@ -337,7 +337,7 @@ paths:
                   type: string
               type: object
       security:
-      - BearerAuths: []
+      - BearerAuth: []
       summary: Create document
       tags:
       - document
@@ -393,6 +393,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Create event
       tags:
       - event
@@ -444,6 +446,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Create a new user job position
       tags:
       - job-position
@@ -495,6 +499,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Create a new job position
       tags:
       - job-position
@@ -545,6 +551,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Login/Create JWT with phone number only
       tags:
       - session
@@ -588,6 +596,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Logout
       tags:
       - session
@@ -642,6 +652,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Get user job positions
       tags:
       - job-position
@@ -697,6 +709,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Create user
       tags:
       - user
@@ -752,11 +766,13 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuth: []
       summary: Create admin
       tags:
       - user
 securityDefinitions:
-  BearerAuths:
+  BearerAuth:
     in: header
     name: Authorization
     type: apiKey

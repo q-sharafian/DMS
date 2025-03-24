@@ -17,7 +17,7 @@
             "post": {
                 "security": [
                     {
-                        "BearerAuths": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Create document for specified event and current user in the current time and return its id.",
@@ -138,6 +138,11 @@
         },
         "/events": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create event for specified job position and return its id.",
                 "consumes": [
                     "application/json"
@@ -238,6 +243,11 @@
         },
         "/jps": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new job position for specified user. Each user job position must be created with another job position.",
                 "tags": [
                     "job-position"
@@ -332,6 +342,11 @@
         },
         "/jps/admin": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new job position for specified user. Each Admin job position is created without a job position and has no parent job position.",
                 "tags": [
                     "job-position"
@@ -426,6 +441,11 @@
         },
         "/login/phone-based": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Login/Create JWT with phone number only.",
                 "tags": [
                     "session"
@@ -520,6 +540,11 @@
         },
         "/logout": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Logout from the current session.",
                 "tags": [
                     "session"
@@ -603,6 +628,11 @@
         },
         "/user/jps": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get user job positions",
                 "tags": [
                     "job-position"
@@ -703,6 +733,11 @@
         },
         "/users/": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a user and return its id. Each user must created by a job position.",
                 "consumes": [
                     "application/json"
@@ -803,6 +838,11 @@
         },
         "/users/admin": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create admin user and return its id. Admin users are users that don't have created by any user.",
                 "consumes": [
                     "application/json"
@@ -1248,7 +1288,7 @@
         }
     },
     "securityDefinitions": {
-        "BearerAuths": {
+        "BearerAuth": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
