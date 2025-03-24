@@ -20,6 +20,7 @@ func newDocHttp(docService s.DocService, logger l.Logger) DocHttp {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Create document
 // @Description Create document for specified event and current user in the current time and return its id.
 // @Tags document

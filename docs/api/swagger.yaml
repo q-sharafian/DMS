@@ -336,6 +336,8 @@ paths:
                 details:
                   type: string
               type: object
+      security:
+      - BearerAuths: []
       summary: Create document
       tags:
       - document
@@ -754,7 +756,7 @@ paths:
       tags:
       - user
 securityDefinitions:
-  BearerAuth:
+  BearerAuths:
     in: header
     name: Authorization
     type: apiKey

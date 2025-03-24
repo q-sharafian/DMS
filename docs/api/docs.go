@@ -22,6 +22,11 @@ const docTemplate = `{
     "paths": {
         "/docs": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuths": []
+                    }
+                ],
                 "description": "Create document for specified event and current user in the current time and return its id.",
                 "consumes": [
                     "application/json"
@@ -1250,7 +1255,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "BearerAuth": {
+        "BearerAuths": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

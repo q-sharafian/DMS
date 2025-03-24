@@ -18,6 +18,7 @@ func newJPHttp(jobPositionService s.JPService, logger l.Logger) JPHttp {
 	return JPHttp{jobPositionService, logger}
 }
 
+// @Security BearerAuth
 // @Summary Create a new user job position
 // @Description Create a new job position for specified user. Each user job position must be created with another job position.
 // @Tags job-position
@@ -49,6 +50,7 @@ func (h *JPHttp) CreateUserJP(c *gin.Context) {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Create a new job position
 // @Description Create a new job position for specified user. Each Admin job position is created without a job position and has no parent job position.
 // @Tags job-position
@@ -80,6 +82,7 @@ func (h *JPHttp) CreateAdminJP(c *gin.Context) {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Get user job positions
 // @Description Get user job positions
 // @Tags job-position

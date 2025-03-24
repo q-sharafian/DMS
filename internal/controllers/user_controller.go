@@ -17,6 +17,7 @@ func newUserHttp(userService s.UserService, logger l.Logger) UserHttp {
 	return UserHttp{userService, logger}
 }
 
+// @Security BearerAuth
 // @Summary Create user
 // @Description Create a user and return its id. Each user must created by a job position.
 // @Tags user
@@ -50,6 +51,7 @@ func (h *UserHttp) CreateUser(c *gin.Context) {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Create admin
 // @Description Create admin user and return its id. Admin users are users that don't have created by any user.
 // @Tags user

@@ -20,6 +20,7 @@ func newSessionHttp(sessionService s.SessionService, logger l.Logger) SessionHtt
 	}
 }
 
+// @Security BearerAuth
 // @Summary Login/Create JWT with phone number only
 // @Description Login/Create JWT with phone number only.
 // @Tags session
@@ -55,6 +56,7 @@ func (h *SessionHttp) PhoneBasedLogin(c *gin.Context) {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Logout
 // @Description Logout from the current session.
 // @Tags session

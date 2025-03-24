@@ -21,6 +21,7 @@ func newEventHttp(event s.EventService, logger l.Logger) EventHttp {
 	}
 }
 
+// @Security BearerAuth
 // @Summary Create event
 // @Description Create event for specified job position and return its id.
 // @Tags event
