@@ -36,16 +36,6 @@ To see the documentation, go to path `/swagger/index.html`.
 
 All time zones must be UTC.
 
-
-**How to setup the app:**  
-1) Create a RSA public and private key pair to used for JWT.  
-To do, run the following command in the project root:  
-```
-openssl genrsa -out certs/jwt_keypair.pem 2048
-openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
-openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
-```
-
 **How to create docker image for the app:**
 1) Create a docker image for the app:  
 ```
@@ -58,7 +48,7 @@ docker build -t dms .
 Create new token with `read:packages` scope. To do that go to `https://github.com/settings/tokens/new?scopes=write:packages` page. After, set registry auth info in `deployment/secret.yml`.   
 At the end, apply secret with `kubectl apply -f secret.yml` command.
 3) Run the following command to create a new secret that is used with docker registries.
-```bash
+```sh
 kubectl create secret docker-registry registry-secret \
   --docker-server=REGISTRY_URL \
   --docker-username=REGISTRY_USERNAME \      
@@ -66,14 +56,21 @@ kubectl create secret docker-registry registry-secret \
   --docker-email=REGISTRY_EMAIL
 ```
 4) Apply DMS deployment:
-```bash
+```sh
 kubectl apply -f deployment.yml
 ```
 5) If you want to list images of the registry, Run the following command:
-```bash
+```sh
 curl -H "Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN" \
      -H "Accept: application/vnd.github.v3+json" \
      https://api.github.com/user/packages?package_type=container
 ```
 Replace `YOUR_PERSONAL_ACCESS_TOKEN` with the PAT you created. (Use Tokens(classic))
-6) 
+6) Create a RSA public and private key pair to used for JWT.  
+To do, run the following command in the project root:  
+```sh
+openssl genrsa -out certs/jwt_keypair.pem 2048
+openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
+openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
+```
+Then copy their values in `secret.yml`. `JWT_PRIVATE_KEY_FILE_PATH` in the `.env` file represents the contents of `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY_FILE_PATH` in the `.env` file represents `JWT_PUBLIC_KEY`.

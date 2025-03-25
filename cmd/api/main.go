@@ -34,20 +34,24 @@ import (
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
-
-	if err := godotenv.Load(".env"); err != nil {
-		panic(fmt.Sprintf("Error loading .env file: %s", err.Error()))
+	var appMode = os.Getenv("APP_MODE")
+	if appMode != "production" {
+		if err := godotenv.Load(".env"); err != nil {
+			panic(fmt.Sprintf("Error loading .env file: %s", err.Error()))
+		}
 	}
 	lgr := logger.NewSLogger(logger.Debug, nil, os.Stderr)
-	if jwtPrivate, err := os.ReadFile(os.Getenv("JWT_PRIVATE_KEY_FILE_PATH")); err != nil {
-		lgr.Panic(err)
-	} else if err = os.Setenv("JWT_PRIVATE_KEY", string(jwtPrivate)); err != nil {
-		lgr.Panic(err)
-	}
-	if jwtPublic, err := os.ReadFile(os.Getenv("JWT_PUBLIC_KEY_FILE_PATH")); err != nil {
-		lgr.Panic(err)
-	} else if err = os.Setenv("JWT_PUBLIC_KEY", string(jwtPublic)); err != nil {
-		lgr.Panic(err)
+	if appMode != "production" {
+		if jwtPrivate, err := os.ReadFile(os.Getenv("JWT_PRIVATE_KEY_FILE_PATH")); err != nil {
+			lgr.Panic(err)
+		} else if err = os.Setenv("JWT_PRIVATE_KEY", string(jwtPrivate)); err != nil {
+			lgr.Panic(err)
+		}
+		if jwtPublic, err := os.ReadFile(os.Getenv("JWT_PUBLIC_KEY_FILE_PATH")); err != nil {
+			lgr.Panic(err)
+		} else if err = os.Setenv("JWT_PUBLIC_KEY", string(jwtPublic)); err != nil {
+			lgr.Panic(err)
+		}
 	}
 
 	psqlConnDetails := db.PsqlConnDetails{
