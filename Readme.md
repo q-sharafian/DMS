@@ -46,3 +46,26 @@ openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
 openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
 ```
 
+**How to create docker image for the app:**
+1) Create a docker image for the app:  
+```
+docker build -t dms .
+```
+
+**How to manage setup the project and its dependencies in Kubernetes:**
+1) Init kubectl.
+2) If you are using GitHub registry, create new token to have ability to pull the images from GitHub registry.  
+Create new token with `read:packages` scope. To do that go to `https://github.com/settings/tokens/new?scopes=write:packages` page. After, set registry auth info in `deployment/secret.yml`.   
+At the end, apply secret with `kubectl apply -f secret.yml` command.
+3) Run the following command to create a new secret that is used with docker registries.
+```bash
+kubectl create secret docker-registry registry-secret \
+  --docker-server=REGISTRY_URL \
+  --docker-username=REGISTRY_USERNAME \      
+  --docker-password=REGISTRY_PASS \  
+  --docker-email=REGISTRY_EMAIL
+```
+4) Apply DMS deployment:
+```bash
+kubectl apply -f deployment.yml
+```

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dms
+  template:
+    metadata:
+      labels:
+        app: dms
+    spec:
+      containers:
+        - name: dms
+          image: ghcr.io/q-sharafian/dms:latest # Use your image
+          ports:
+            - containerPort: 8080 # Your application's port
+          resources:
+            requests:
+              cpu: 300m
+              memory: 600Mi
+            limits:
+              cpu: 300m
+              memory: 600Mi
+      imagePullSecrets:
+        - name: registry-secret
