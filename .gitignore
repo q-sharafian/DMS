@@ -2,3 +2,4 @@ main
 *.pem
 *.key
 *.crt
+deployment/secret.yml
