@@ -69,3 +69,11 @@ kubectl create secret docker-registry registry-secret \
 ```bash
 kubectl apply -f deployment.yml
 ```
+5) If you want to list images of the registry, Run the following command:
+```bash
+curl -H "Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN" \
+     -H "Accept: application/vnd.github.v3+json" \
+     https://api.github.com/user/packages?package_type=container
+```
+Replace `YOUR_PERSONAL_ACCESS_TOKEN` with the PAT you created. (Use Tokens(classic))
+6) 
