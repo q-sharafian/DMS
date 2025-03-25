@@ -23,4 +23,9 @@ jobs:
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag ghcr.io/${{ github.repository }}/dms:latest
     - name: Push the Docker image to GitHub Container Registry
-      run: docker push ghcr.io/${{ github.repository }}/dms:latest
+      run: |
+        REPO=${{ github.repository }}
+        USERNAME=$(echo $REPO | cut -d'/' -f1)
+        REPONAME=$(echo $REPO | cut -d'/' -f2)
+        echo "Username: $USERNAME"
+        echo "Repository Name: $REPONAME"
