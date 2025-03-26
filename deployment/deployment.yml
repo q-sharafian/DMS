@@ -15,6 +15,11 @@ spec:
       containers:
         - name: dms
           image: ghcr.io/q-sharafian/dms:latest # Use your image
+          envFrom:
+          - configMapRef:
+              name: common-config
+          - secretRef:
+              name: common-secret
           ports:
             - containerPort: 8080 # Your application's port
           resources:

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: my-persistent-volume
+spec:
+  capacity:
+    storage: 3Gi  # Request 3 gigabytes of storage
+  accessModes:
+    - ReadWriteOnce  # Can be mounted as read-write by a single node
+    # - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain # Or Delete, Recycle
+  storageClassName: standard # Or a custom StorageClass
+  # Do not use hostPath in production environments, as it is not portable and can lead to data loss or security issues.
+  hostPath: # For development/testing purposes only. Do not use in production.
+    path: "/data/db"

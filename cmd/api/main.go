@@ -9,6 +9,7 @@ import (
 	"DMS/internal/services"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	_ "DMS/docs/api"
@@ -54,13 +55,17 @@ func main() {
 		}
 	}
 
+	dbPort, err := strconv.Atoi(os.Getenv("PSQL_PORT"))
+	if err != nil {
+		lgr.Panic(err)
+	}
 	psqlConnDetails := db.PsqlConnDetails{
-		Host: "localhost",
-		Port: 5432,
+		Host: os.Getenv("PSQL_HOST"),
+		Port: dbPort,
 		// TODO: Edit username and password such that use enviroment variable
-		Username:        "mohammad",
-		Password:        "3522694",
-		DB:              "dms",
+		Username:        os.Getenv("PSQL_USER"),
+		Password:        os.Getenv("PSQL_PASSWORD"),
+		DB:              os.Getenv("PSQL_DB"),
 		MaxConnLifetime: time.Hour,
 		MaxIdleConns:    5,
 		MAxOpenConns:    5,

@@ -44,9 +44,11 @@ docker build -t dms .
 
 **How to manage setup the project and its dependencies in Kubernetes:**
 1) Init kubectl.
+
 2) If you are using GitHub registry, create new token to have ability to pull the images from GitHub registry.  
 Create new token with `read:packages` scope. To do that go to `https://github.com/settings/tokens/new?scopes=write:packages` page. After, set registry auth info in `deployment/secret.yml`.   
-At the end, apply secret with `kubectl apply -f secret.yml` command.
+At the end, apply secret with `kubectl apply -f secret.yml` command.  
+
 3) Run the following command to create a new secret that is used with docker registries.
 ```sh
 kubectl create secret docker-registry registry-secret \
@@ -55,22 +57,35 @@ kubectl create secret docker-registry registry-secret \
   --docker-password=REGISTRY_PASS \  
   --docker-email=REGISTRY_EMAIL
 ```
-4) Apply DMS deployment:
-```sh
-kubectl apply -f deployment.yml
-```
-5) If you want to list images of the registry, Run the following command:
+
+4) If you want to list images of the registry, Run the following command:
 ```sh
 curl -H "Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN" \
      -H "Accept: application/vnd.github.v3+json" \
      https://api.github.com/user/packages?package_type=container
 ```
 Replace `YOUR_PERSONAL_ACCESS_TOKEN` with the PAT you created. (Use Tokens(classic))
-6) Create a RSA public and private key pair to used for JWT.  
+
+5) Create a RSA public and private key pair to used for JWT.    
 To do, run the following command in the project root:  
 ```sh
 openssl genrsa -out certs/jwt_keypair.pem 2048
 openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
 openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
 ```
-Then copy their values in `secret.yml`. `JWT_PRIVATE_KEY_FILE_PATH` in the `.env` file represents the contents of `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY_FILE_PATH` in the `.env` file represents `JWT_PUBLIC_KEY`.
+Then copy their values in `secret.yml`. `JWT_PRIVATE_KEY_FILE_PATH` in the `.env` file represents the contents of `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY_FILE_PATH` in the `.env` file represents `JWT_PUBLIC_KEY`.  
+
+6) Apply kubernetes secret and configmap resources:
+```sh
+kubectl apply -f configmap.yml -f secret.yml
+```
+
+7) Apply DMS deployment:
+```sh
+kubectl apply -f deployment.yml
+```
+
+8) Init persistent volume:
+```sh
+kubectl apply -f deployment/psql/persistent-vol.yaml
+```
