@@ -59,7 +59,6 @@ definitions:
         type: string
     required:
     - title
-    - user_id
     type: object
   models.AdminUser:
     properties:
@@ -139,7 +138,7 @@ definitions:
       description:
         type: string
       id:
-        example: 76a79030f-0685-49d1-bbdd-31ab1b4c1613
+        example: 46bbd388-d251-4a53-9f5b-da2c909fe14a
         type: string
       name:
         description: event name
@@ -179,6 +178,9 @@ definitions:
         description: Does the current job position is allowed to create a job position
           as child of himself?
         type: boolean
+      jpid:
+        description: ID of the job position the permission is for
+        type: string
     required:
     - is_allow_create_jp
     type: object
@@ -260,7 +262,6 @@ definitions:
     required:
     - parent_id
     - title
-    - user_id
     type: object
 externalDocs:
   description: OpenAPI
@@ -451,6 +452,93 @@ paths:
       summary: Create a new user job position
       tags:
       - job-position
+  /jps/{jp_id}/events/{event_id}/docs:
+    get:
+      consumes:
+      - application/json
+      description: Get the latest documents within the event with the given ID. The
+        documents can be retrieved only by the owner of the event and its ancestors,
+        if they have the appropriate permissions.
+      parameters:
+      - description: Job position id
+        in: path
+        name: jp_id
+        required: true
+        type: string
+      - description: Event id
+        in: path
+        name: event_id
+        required: true
+        type: string
+      - description: Number of documents to get
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Documents
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  items:
+                    $ref: '#/definitions/models.Doc'
+                  type: array
+              type: object
+        "400":
+          description: Bad request error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "401":
+          description: The user is not authenticated
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "403":
+          description: Forbidden error. The job position doesn't have permission to
+            access this event and their docs.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "404":
+          description: Not found error. The event doesn't exists.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get last documents
+      tags:
+      - event
   /jps/admin:
     post:
       description: Create a new job position for specified user. Each Admin job position

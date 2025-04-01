@@ -113,7 +113,11 @@ func modelMultimedias2DBMultimedias(m *[]m.MediaPath, logger l.Logger) *[]db.Mul
 	return &dbMultimedias
 }
 
+// If it be nil, return empty slice
 func dbMultimedias2ModelMultimedias(mum *[]db.Multimedia, logger l.Logger) *[]m.MediaPath {
+	if mum == nil {
+		return &[]m.MediaPath{}
+	}
 	var modelMultimedias []m.MediaPath
 	for _, media := range *mum {
 		modelMultimedias = append(modelMultimedias, *dbMultimedia2ModelMultimedia(&media, logger))

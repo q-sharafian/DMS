@@ -1,12 +1,14 @@
 package dal
 
 import (
+	"DMS/internal/common"
 	"DMS/internal/db"
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"errors"
 	"fmt"
+	"sync"
 
 	"gorm.io/gorm"
 )
@@ -28,6 +30,10 @@ type JPDAL interface {
 	// Return true if a job position with given ID belongs to a user with given ID.
 	IsExistsUserWithJP(userID, jpID m.ID) (bool, error)
 	GetAllJPCount() (uint64, error)
+	getSomeJPIDs(limit, offset int) (*[]JPEdge, error)
+	// Return an iterator over job position details. (their ids and their parents)
+	// limit is the batch size of the job positions fetched from the db.
+	GetJPEdgeIter(limit int) common.Iterator[JPEdge]
 }
 
 type psqlJPDAL struct {
@@ -177,6 +183,71 @@ func (d *psqlJPDAL) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
 		return false, nil
 	} else {
 		return true, nil
+	}
+}
+
+type JPEdge struct {
+	JP     m.ID
+	Parent *m.ID
+}
+
+func (d *psqlJPDAL) getSomeJPIDs(limit, offset int) (*[]JPEdge, error) {
+	list := []db.JobPosition{}
+	result := d.db.Limit(limit).Offset(offset).Select("id", "parent_id").Find(&list)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	jpIDs := make([]JPEdge, len(list))
+	for i := range list {
+		jpIDs[i].JP = *dbID2ModelID(&list[i].ID)
+		if list[i].ParentID != nil {
+			jpIDs[i].Parent = dbID2ModelID(list[i].ParentID)
+		}
+	}
+	return &jpIDs, nil
+}
+
+type jpsEdgeIter struct {
+	offset  int
+	limit   int
+	jpStack common.Stack[JPEdge]
+	mu      *sync.Mutex
+	jpDAL   JPDAL
+	logger  l.Logger
+}
+
+func (jp *jpsEdgeIter) Next() (JPEdge, bool) {
+	jp.mu.Lock()
+	defer jp.mu.Unlock()
+	if jp.jpStack.IsEmpty() {
+		jps, err := jp.jpDAL.getSomeJPIDs(jp.limit, jp.offset)
+		if err != nil {
+			jps, err = jp.jpDAL.getSomeJPIDs(jp.limit, jp.offset)
+			if err != nil {
+				jp.logger.Panicf("Failed to get some job position IDs with offset %d and limit %d: %s",
+					jp.offset, jp.limit, err.Error())
+			}
+		}
+		if len(*jps) == 0 {
+			return JPEdge{}, false
+		}
+		jp.offset += jp.limit
+		for _, jPos := range *jps {
+			jp.jpStack.Push(jPos)
+		}
+	}
+	return jp.jpStack.Pop(), jp.jpStack.Size() > 0
+}
+func (d *psqlJPDAL) GetJPEdgeIter(limit int) common.Iterator[JPEdge] {
+	mutex := sync.Mutex{}
+	return &jpsEdgeIter{
+		offset:  0,
+		limit:   limit,
+		jpStack: *common.NewStack[JPEdge](nil),
+		mu:      &mutex,
+		jpDAL:   d,
+		logger:  d.logger,
 	}
 }
 

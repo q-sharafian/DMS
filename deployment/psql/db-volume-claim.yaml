@@ -14,5 +14,5 @@ spec:
     requests:
       # the PVC storage
       storage: 3Gi
-  # hostPath:
-  #   path: "/var/lib/postgresql/data"
+  hostPath:
+    path: "/var/lib/postgresql/data"

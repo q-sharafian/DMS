@@ -5,7 +5,7 @@ import (
 )
 
 type Event struct {
-	ID ID `json:"id" example:"76a79030f-0685-49d1-bbdd-31ab1b4c1613"`
+	ID ID `json:"id" example:"46bbd388-d251-4a53-9f5b-da2c909fe14a"`
 	// event name
 	Name string `json:"name" validate:"required"`
 	// ID of job position wants to create event

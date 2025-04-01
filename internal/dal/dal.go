@@ -25,7 +25,7 @@ func modelID2DBID(id *m.ID) *db.ID {
 	return &a
 }
 
-func dbID2ModelIDSlice(ids *[]db.ID) *[]m.ID {
+func dbIDs2ModelIDs(ids *[]db.ID) *[]m.ID {
 	if ids == nil {
 		return nil
 	}
@@ -35,7 +35,7 @@ func dbID2ModelIDSlice(ids *[]db.ID) *[]m.ID {
 	}
 	return &res
 }
-func modelID2DBIDSlice(ids *[]m.ID) *[]db.ID {
+func modelIDs2DBIDs(ids *[]m.ID) *[]db.ID {
 	if ids == nil {
 		return nil
 	}

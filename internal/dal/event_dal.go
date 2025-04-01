@@ -74,15 +74,14 @@ func (d *psqlEventDAL) GetAllCreatedEventsByJPID(jpID m.ID) (*[]m.Event, error) 
 
 // TODO: Test it with wrong id to know if it returns nil
 func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
-	var event *db.Event
+	var event db.Event
 	result := d.db.Where(&db.Event{
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&eventID)},
-	}).Find(event)
+	}).Find(&event)
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get event by id %s (%s)", eventID.ToString(), result.Error.Error())
 		return nil, result.Error
 	}
-	return dbEvent2ModelEvent(event), nil
+	return dbEvent2ModelEvent(&event), nil
 }
 
 func dbEvent2ModelEvent(event *db.Event) *m.Event {

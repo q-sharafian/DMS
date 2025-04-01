@@ -36,6 +36,9 @@ func (h *JPHttp) CreateUserJP(c *gin.Context) {
 	if err := parseValidateJSON(c, &jp, h.logger); err != nil {
 		return
 	}
+	jwt := getJWT(c, h.logger)
+	jp.JobPosition.UserID = jwt.UserID
+
 	h.logger.Debugf("Got job position %+v and permission %+v, ParentID: %+v", jp.JobPosition, jp.Permission, jp.JobPosition.ParentID)
 	id, err := h.jpService.CreateUserJP(&jp.JobPosition, &jp.Permission)
 	if err == nil {
@@ -47,6 +50,13 @@ func (h *JPHttp) CreateUserJP(c *gin.Context) {
 	case s.SEDBError:
 		h.logger.Errorf("Failed to create job position (%s)", err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
+	case s.InMemoryUpdateFailed:
+		h.logger.Errorf("Failed to create job position (%s)", err.Error())
+		serverErrResp(c, MsgSuccessAction, MsgSomeActionsFailed)
+	case s.SENotFound:
+		h.logger.Errorf("Failed to create job position (%s)", err.Error())
+	default:
+		h.logger.Panicf("Unexpected error code %d: %s", code, err.Error())
 	}
 }
 

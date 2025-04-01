@@ -5,7 +5,7 @@ import "encoding/json"
 type CommonJobPosition struct {
 	ID ID `json:"id" example:"6a79030f-0685-49d1-bbdd-31ab1b4c1613"`
 	// ID of the user the JP is for that.
-	UserID ID     `json:"user_id" example:"6a79030f-0685-49d1-bbdd-31ab1b4c1613" validate:"required"`
+	UserID ID     `json:"user_id" example:"6a79030f-0685-49d1-bbdd-31ab1b4c1613"`
 	Title  string `json:"title" example:"معاون مدرسه" validate:"required"`
 	// The region the JP belongs to
 	RegionID ID `json:"region_id" example:"b11c9be1-b619-4ef5-be1b-a1cd9ef265b7"`

@@ -71,7 +71,7 @@ type Event struct {
 	BaseModel
 	// event name
 	Name string
-	// The id of job position who created the document
+	// The id of job position who created the event
 	CreatedByID ID `gorm:"type:uuid;default:uuid_generate_v4();not null"`
 	Description string
 	Doc         []Doc `gorm:"foreignKey:EventID"`
@@ -112,18 +112,17 @@ type JobPosition struct {
 	Title    string
 	RegionID ID `gorm:"type:uuid;default:uuid_generate_v4()"`
 	// ID of parent job position the current job position is for that
-	ParentID      *ID           `gorm:"type:uuid"`
-	Parent        *JobPosition  `gorm:"foreignKey:ParentID"`
-	JPPermission  JPPermission  `gorm:"foreignKey:JpID"`
-	Event         []Event       `gorm:"foreignKey:CreatedByID"`
-	Doc           []Doc         `gorm:"foreignKey:CreatedByID"`
-	HierarchyTree HierarchyTree `gorm:"foreignKey:JpID"`
+	ParentID     *ID          `gorm:"type:uuid"`
+	Parent       *JobPosition `gorm:"foreignKey:ParentID"`
+	JPPermission JPPermission `gorm:"foreignKey:JpID"`
+	Event        []Event      `gorm:"foreignKey:CreatedByID"`
+	Doc          []Doc        `gorm:"foreignKey:CreatedByID"`
 }
 
 // Permissions of a job position
 type JPPermission struct {
 	BaseModel
-	JpID            ID `gorm:"type:uuid;default:uuid_generate_v4();not null;unique"`
+	JpID            ID `gorm:"type:uuid;not null;unique"`
 	IsAllowCreateJP bool
 }
 
@@ -131,15 +130,6 @@ type JPPermission struct {
 // TableName overrides the default table name.
 func (JPPermission) TableName() string {
 	return "jp_permissions"
-}
-
-// For each job position we have a row that contains job position id and its child
-// job positions.
-type HierarchyTree struct {
-	BaseModel
-	JpID ID `gorm:"type:uuid;default:uuid_generate_v4();not null;unique"`
-	// TODO: The type must be uuid or uuid[]?
-	ChildJpsID *[]ID `gorm:"type:uuid;default:uuid_generate_v4()"`
 }
 
 // Store details of each login by users
@@ -207,31 +197,8 @@ func NewPsqlConn(conn *PsqlConnDetails, doAutoMigrate bool, logger l.Logger) PSQ
 	return *db
 }
 
-// Entity is a pointer to a struct
-// func CreateWhereClause(db *gorm.DB, entity any) *gorm.DB {
-// 	v := reflect.ValueOf(entity)
-// 	t := reflect.TypeOf(entity)
-// 	if v.Kind() != reflect.Struct {
-// 		return nil // Not a struct
-// 	}
-// 	// Fields that are not zero value or nil
-// 	nonZeroFields := make(map[string]interface{})
-// 	for i := 0; i < v.NumField(); i++ {
-// 		field := v.Field(i)
-// 		fieldType := t.Field(i)
-// 		if !field.IsZero() {
-// 			nonZeroFields[fieldType.Name] = field.Interface()
-// 		}
-// 	}
-
-// 	for key, value := range nonZeroFields {
-// 		db = db.Where(fmt.Sprintf("%s = ?", key), value)
-// 	}
-// 	return nonZeroFields
-// }
-
 // Migrate from schema to database and update the database scheme.
 func autoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&User{}, &Event{}, &Doc{}, &JobPosition{}, &JPPermission{}, &HierarchyTree{},
+	return db.AutoMigrate(&User{}, &Event{}, &Doc{}, &JobPosition{}, &JPPermission{},
 		&Multimedia{}, &Session{})
 }

@@ -31,8 +31,7 @@ func apiV1NeedAuth(router *gin.Engine, ctr c.HttpConrtoller) {
 	// If response http code be 200, then return json as details field of the response.
 	routerV1.POST("/events", ctr.Event.CreateEvent)
 	routerV1.POST("/docs", ctr.Doc.CreateDoc)
-	// This route have the "count" query parameter
-	routerV1.GET("/docs/event/:id", ctr.Doc.GetNLastDocsByEventID)
+	routerV1.GET("/jps/:jp_id/events/:event_id/docs", ctr.Doc.GetNLastDocsByEventID)
 	routerV1.POST("/logout", ctr.Session.Logout)
 	// router.GET("/users/:id", controller.GetUser)
 	// router.GET("/products", controllers.GetProducts) //Example of a different controller.

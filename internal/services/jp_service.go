@@ -3,6 +3,8 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	"DMS/internal/graph"
+	"DMS/internal/hierarchy"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"fmt"
@@ -17,7 +19,7 @@ type JPService interface {
 	// Create user job position with its permissions for the given user and details then, reutrn its id.
 	//
 	// Possible error codes the function could returns:
-	// SEDBError- SENotFound
+	// SEDBError- SENotFound- InMemoryUpdateFailed
 	CreateUserJP(jp *m.UserJobPosition, permissions *m.Permission) (*m.ID, *e.Error)
 	// Create admin job position with its permissions for the given user and details then, reutrn its id.
 	//
@@ -34,8 +36,9 @@ type JPService interface {
 // It's a simple implementation of JPService interface.
 // This implementation has minimum functionalities.
 type sJPService struct {
-	jp     dal.JPDAL
-	logger l.Logger
+	jp        dal.JPDAL
+	logger    l.Logger
+	hierarchy *hierarchy.HierarchyTree
 }
 
 func (s *sJPService) GetUserJPs(user *m.User) (*[]m.UserJobPosition, *e.Error) {
@@ -61,6 +64,21 @@ func (s *sJPService) CreateUserJP(jp *m.UserJobPosition, permissions *m.Permissi
 				),
 			)
 	}
+
+	addEdge := make(chan graph.GraphChange, 1)
+	defer close(addEdge)
+	responseErr := make(chan error)
+	defer close(responseErr)
+	addEdge <- graph.GraphChange{
+		Type:        graph.AddEdge,
+		Edge:        *jpEdge2GraphEdge(dal.JPEdge{JP: *jpID, Parent: &jp.ParentID}),
+		ResponseErr: responseErr,
+	}
+	err = <-responseErr
+	if err != nil {
+		return nil, e.NewErrorP("failed to update hierarchy tree: %s", InMemoryUpdateFailed, err.Error())
+	}
+	s.hierarchy.Graph().ProcessChanges(addEdge)
 	return jpID, nil
 }
 
@@ -89,6 +107,6 @@ func (s *sJPService) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
 }
 
 // Create an instance of sJPService struct
-func newSJPService(jp dal.JPDAL, logger l.Logger) JPService {
-	return &sJPService{jp, logger}
+func newSJPService(jp dal.JPDAL, hierarchy *hierarchy.HierarchyTree, logger l.Logger) JPService {
+	return &sJPService{jp, logger, hierarchy}
 }

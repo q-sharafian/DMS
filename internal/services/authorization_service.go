@@ -3,122 +3,57 @@ package services
 import (
 	"DMS/internal/dal"
 	e "DMS/internal/error"
+	"DMS/internal/hierarchy"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 )
 
-// Contains interface for all functionalities related to permissions.
-type PermissionService interface {
-	// Return true if ancestorID is ancestor of nodeID in the hierarchy tree. Being an
-	// ancestor means there is a path from the ancestor to the specified node.
-	IsAncestor(ancestorID, nodeID m.ID) bool
-	// In a graph, transitive closure means which nodes could be reachable from each other.
-	// Even if they're not connected by a single edge.
-	// Return a matrix. If there's a path from i to the j, then matrix[i][j] = 1. else 0.
-	GetTransitiveClosure() m.Matrix
+// Contains interface for all functionalities related to permissions and hierarchy tree.
+type AuthorizationService interface {
+	// Check if there's a path from ancestorID to nodeID.
+	//
+	// Possible error codes:
+	// SEDBError
+	IsAncestor(ancestorID, nodeID m.ID) (bool, *e.Error)
+	// List of permissions of the given job position.
+	//
+	// Possible error codes:
+	// SEDBError
+	GetJPPermissions(jpID m.ID) (*m.Permission, *e.Error)
 }
 
-// It's a simple implementation of PermissionService interface.
+// It's a simple implementation of AuthorizationService interface.
 // This implementation has minimum functionalities.
-type sPermissionService struct {
+type sAuthorizationService struct {
+	hierarchy  hierarchy.HierarchyTree
 	permission dal.PermissionDAL
 	logger     l.Logger
-	// Adjacency matrix represents the path between each two job positions. If there's
-	// a path from i to j, then matrix[i][j] >= 1 and it means job position i is an
-	// ancestor of job position j. Else it would be 0.
-	jpPaths m.Matrix
-	// Because of the id of job positions are not consecutive, we need to map them to
-	// consecutive integers.
-	mappedJPID2Int map[m.ID]int
 }
 
-// Create a new simple permission service and find transitive closure and mapping
-// job position ids to consecutive integers. If occured error, panic.
-func newSPermissionService(permission dal.PermissionDAL, logger l.Logger) PermissionService {
-	sPermission := &sPermissionService{
+// Create a new simple authorization service
+func newSAuthorizationService(hierarchy hierarchy.HierarchyTree, permission dal.PermissionDAL,
+	logger l.Logger) AuthorizationService {
+	sPermission := &sAuthorizationService{
+		hierarchy,
 		permission,
 		logger,
-		nil,
-		nil,
-	}
-	err := sPermission.findTransitiveClosure()
-	if err != nil {
-		sPermission.logger.Panicf("Failed to find transitive closure and mapping job position ids (%s)", err.Error())
 	}
 	return sPermission
 }
 
-func (s *sPermissionService) IsAncestor(ancestorID, nodeID m.ID) bool {
-	ancestor := s.mappedJPID2Int[ancestorID]
-	node := s.mappedJPID2Int[nodeID]
-	return s.jpPaths[ancestor][node] >= 1
-}
-
-// Fetch the hierarchy tree. Create adjacency matrix and mapping between job position
-// ids and consecutive integers and finally calculate the transitive closure.
-// The transitive closure and mapping are stored in the struct immimmediately.
-//
-// Possible error codes:
-// DBError
-func (s *sPermissionService) findTransitiveClosure() *e.Error {
-	rawHierarchyTree, err := s.permission.GetHierarchyTree()
+func (s *sAuthorizationService) IsAncestor(ancestorID, nodeID m.ID) (bool, *e.Error) {
+	isAncestor, err := s.hierarchy.IsAncestor(id2Vertex(ancestorID), id2Vertex(nodeID))
 	if err != nil {
-		return e.NewErrorP(err.Error(), SEDBError)
+		return false, e.NewErrorP("failed to check if ancestor id %s is an ancestor of node id %s: %s",
+			SEDBError, ancestorID.ToString(), nodeID.ToString(), err.Error())
 	}
-	s.jpPaths, s.mappedJPID2Int = adjacencyList2AdjacencyMatrix(rawHierarchyTree)
-	floydWarshall(s.jpPaths, len(s.jpPaths))
-	return nil
+	return isAncestor, nil
 }
 
-func (s *sPermissionService) GetTransitiveClosure() m.Matrix {
-	return s.jpPaths
-}
-
-// Find Shortest path between each two verices of given graph. Given graph is as
-// adjacency matrix.
-func floydWarshall(distance m.Matrix, numVertices int) {
-	for k := 0; k < numVertices; k++ {
-		for i := 0; i < numVertices; i++ {
-			for j := 0; j < numVertices; j++ {
-				if distance[i][k]+distance[k][j] < distance[i][j] {
-					distance[i][j] = distance[i][k] + distance[k][j]
-				}
-			}
-		}
+func (s *sAuthorizationService) GetJPPermissions(jpID m.ID) (*m.Permission, *e.Error) {
+	permission, err := s.permission.GetPermissionsByJPID(jpID)
+	if err != nil {
+		return nil, e.NewErrorP(err.Error(), SEDBError)
 	}
-}
-
-// Map each vertex in the graph to an integer such that these integers be consecutive
-// from 0 to n.
-func mapVertexIDs2ConInt(adjacencyList m.Graph) map[m.ID]int {
-	mapped := make(map[m.ID]int)
-	lastInt := 0
-	for parent, childrens := range adjacencyList {
-		if _, ok := mapped[parent]; !ok {
-			mapped[parent] = lastInt
-			lastInt++
-		}
-		for _, child := range *childrens {
-			if _, ok := mapped[child]; !ok {
-				mapped[child] = lastInt
-				lastInt++
-			}
-		}
-	}
-	return mapped
-}
-
-// Create adjacency matrix represents the hierarchy tree.
-// If there's a path from vertex i to j, set matrix[i][j] to 1, otherwise set it to 0.
-//
-// Return two element. First, the adjacency matrix. Second, a map of vertex IDs to integer.
-func adjacencyList2AdjacencyMatrix(adjacencyList m.Graph) (m.Matrix, map[m.ID]int) {
-	mapped := mapVertexIDs2ConInt(adjacencyList)
-	adjacencyMatrix := make(m.Matrix, 0)
-	for parent, childrens := range adjacencyList {
-		for _, child := range *childrens {
-			adjacencyMatrix[mapped[parent]][mapped[child]] = 1
-		}
-	}
-	return adjacencyMatrix, mapped
+	return permission, nil
 }

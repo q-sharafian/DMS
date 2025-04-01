@@ -446,6 +446,161 @@ const docTemplate = `{
                 }
             }
         },
+        "/jps/{jp_id}/events/{event_id}/docs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the latest documents within the event with the given ID. The documents can be retrieved only by the owner of the event and its ancestors, if they have the appropriate permissions.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "event"
+                ],
+                "summary": "Get last documents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job position id",
+                        "name": "jp_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Event id",
+                        "name": "event_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of documents to get",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documents",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Doc"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "The user is not authenticated",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden error. The job position doesn't have permission to access this event and their docs.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not found error. The event doesn't exists.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/login/phone-based": {
             "post": {
                 "security": [
@@ -1000,8 +1155,7 @@ const docTemplate = `{
         "models.AdminJobPosition": {
             "type": "object",
             "required": [
-                "title",
-                "user_id"
+                "title"
             ],
             "properties": {
                 "created_at": {
@@ -1134,7 +1288,7 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string",
-                    "example": "76a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                    "example": "46bbd388-d251-4a53-9f5b-da2c909fe14a"
                 },
                 "name": {
                     "description": "event name",
@@ -1184,6 +1338,10 @@ const docTemplate = `{
                 "is_allow_create_jp": {
                     "description": "Does the current job position is allowed to create a job position as child of himself?",
                     "type": "boolean"
+                },
+                "jpid": {
+                    "description": "ID of the job position the permission is for",
+                    "type": "string"
                 }
             }
         },
@@ -1260,8 +1418,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "parent_id",
-                "title",
-                "user_id"
+                "title"
             ],
             "properties": {
                 "created_at": {

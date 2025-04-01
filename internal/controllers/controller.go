@@ -11,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 var validate *validator.Validate
@@ -88,6 +87,13 @@ const (
 	MsgCheckInfoAgain           = "لطفا مشخصات را مجددا بررسی کنید"
 	MsgNotFoundC                = "مورد مورد نظر یافت نشد %s"
 	MsgJP                       = "سمت شغلی"
+	MsgDocs                     = "مستندات"
+	MsgCreationNotAllowC        = "ایجاد %s برای شما مجاز نیست"
+	MsgEventOwnerMismatchedJP   = "کسی که این رویداد را ایجاد کرده است، از این سمت شغلی استفاده نمی کند"
+	MsgJPNotBelongsUser         = "عنوان شغلی مورد نظر به این کاربر تعلق ندارد"
+	MsgNotAncestor              = "عنوان شغلی جاری، پایین تر از عوان شغلی مورد نظر است"
+	MsgNotPermission            = "مجوز دسترسی ندارید"
+	MsgSomeActionsFailed        = "خطایی در برخی بخش‌ها رخ داده است"
 )
 
 const authInfo = "AuthInfo"
@@ -199,24 +205,20 @@ func newParamParser(c *gin.Context, logger l.Logger) *parseParam {
 	}
 }
 
-func (p *parseParam) parseID(paramKey string, dest *m.ID) error {
+// Parse the input HTTP parameter specified with the input key (contained in url) to an ID type.
+// If an error occurs during parsing or validation, create a log. If the default value
+// isn't null, return the default value, but if it is null, return an error as well.
+func (p *parseParam) parseID(paramKey string, defaultValue *m.ID) (*m.ID, error) {
 	param := p.c.Param(paramKey)
-	if param == "" {
-		p.logger.Debugf("The param %s is empty", paramKey)
-		badRequestResp(p.c, MsgBadValue, MsgParsingError)
-		return e.NewSError("the input parameter must not be empty")
-	}
-	uuid, err := uuid.Parse(param)
+	id, err := m.ID{}.FromString2(param)
 	if err != nil {
 		p.logger.Debugf("Error in parsing id \"%s\" (%s)", param, err.Error())
-		badRequestResp(p.c, MsgBadValue, MsgParsingError)
-		return e.NewSError("couldn't parse ID")
+		if defaultValue == nil {
+			badRequestResp(p.c, MsgBadValue, MsgParsingError)
+		}
+		return defaultValue, e.NewSError("couldn't parse ID")
 	}
-
-	var result m.ID
-	result.FromUUID(uuid)
-	dest = &result
-	return nil
+	return &id, nil
 }
 
 func (p *parseParam) parseUInt(paramKey string, dest *uint64) error {
@@ -285,8 +287,6 @@ func (p *queryParser) ParseID(queryKey string, defaultValue *m.ID) (*m.ID, error
 		}
 		return defaultValue, e.NewSError("couldn't parse ID")
 	}
-	// var result m.ID
-	// result.FromUUID(id)
 	return &id, nil
 }
 

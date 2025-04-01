@@ -4,6 +4,8 @@ import (
 	"DMS/internal/controllers"
 	"DMS/internal/dal"
 	"DMS/internal/db"
+	"DMS/internal/graph"
+	"DMS/internal/hierarchy"
 	"DMS/internal/logger"
 	"DMS/internal/routes"
 	"DMS/internal/services"
@@ -60,9 +62,8 @@ func main() {
 		lgr.Panic(err)
 	}
 	psqlConnDetails := db.PsqlConnDetails{
-		Host: os.Getenv("PSQL_HOST"),
-		Port: dbPort,
-		// TODO: Edit username and password such that use enviroment variable
+		Host:            os.Getenv("PSQL_HOST"),
+		Port:            dbPort,
 		Username:        os.Getenv("PSQL_USER"),
 		Password:        os.Getenv("PSQL_PASSWORD"),
 		DB:              os.Getenv("PSQL_DB"),
@@ -71,7 +72,29 @@ func main() {
 		MAxOpenConns:    5,
 	}
 	psqlDAL := dal.NewPostgresDAL(psqlConnDetails, lgr, true)
-	simpleService := services.NewSService(&psqlDAL, lgr)
+
+	// Init redis
+	dbIndex, err := strconv.Atoi(os.Getenv("REDIS_DB"))
+	if err != nil {
+		lgr.Panic(err)
+	}
+	expireTime, err := strconv.Atoi(os.Getenv("REDIS_EXPIRE"))
+	if err != nil {
+		lgr.Panic(err)
+	}
+	redisConnDetails := &db.RedisConnDetails{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       dbIndex,
+		Expire:   time.Second * time.Duration(expireTime),
+	}
+	redisDAL := dal.NewRedisInMemoeyDAL(redisConnDetails, lgr)
+	// Init hierarchy tree
+	graphStorage := graph.NewInMemoryDBStorage(redisDAL, []byte("e"), lgr)
+	dynamicGraph := graph.NewDynamicGraph(graphStorage, lgr)
+	hierarchyTree := hierarchy.NewHierarchyTree(dynamicGraph, lgr)
+
+	simpleService := services.NewSService(&psqlDAL, hierarchyTree, lgr)
 	httpController := controllers.NewHttpController(simpleService, lgr)
 
 	router := gin.Default()

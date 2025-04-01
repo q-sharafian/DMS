@@ -36,6 +36,22 @@ To see the documentation, go to path `/swagger/index.html`.
 
 All time zones must be UTC.
 
+**Notes on running the app in local:**
+1) Run the following command in the project root to have an `.env` file and set its values:  
+```sh
+mv .env-template .env
+```
+
+2) Run go wtih below command in the root directory:
+```sh
+go run cmd/api/main.go
+```
+
+2) Init redis and store its details in the `.env` file.
+```sh
+docker run --name some-redis -d redis
+```
+
 **How to create docker image for the app:**
 1) Create a docker image for the app:  
 ```
