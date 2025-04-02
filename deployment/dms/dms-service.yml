@@ -12,9 +12,9 @@ spec:
   ports:
     - name: http
       # The port number to expose the service
-      port: 8080
+      port: 7956
       protocol: TCP
-      targetPort: 7956
+      targetPort: 8080
   # Pod to route service traffic  
   selector:
     app: dms # Matches the app label in your PostgreSQL deployment

@@ -13,4 +13,4 @@ spec:
               service:
                 name: dms-service # Your Service name
                 port:
-                  number: 7956 # Service's targetPort
+                  number: 8080 # Service's targetPort
