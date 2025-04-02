@@ -4,7 +4,7 @@ Try write all of logs in the controllers package except some exceptations. For e
 
 If we're going to delete a row in database, it has to be a soft delete. That is, the row can't be deleted, just something like a label has to be used to show that it's been deleted.
 
-The hierarchy tree is not connected tree. It means some users/job-positions could have not any parents or creators.
+The hierarchy tree is not connected tree. It means some job-positions could have not any parents or creators.
 
 psql -U mohammad -d dms -h localhost -p 5432
 
@@ -40,17 +40,16 @@ All time zones must be UTC.
 1) Run the following command in the project root to have an `.env` file and set its values:  
 ```sh
 mv .env-template .env
-```
-
-2) Run go wtih below command in the root directory:
-```sh
-go run cmd/api/main.go
-```
-
+```  
 2) Init redis and store its details in the `.env` file.
 ```sh
 docker run --name some-redis -d redis
-```
+```  
+3) Run go wtih below command in the root directory:
+```sh
+go run cmd/api/main.go
+```  
+
 
 **How to create docker image for the app:**
 1) Create a docker image for the app:  
@@ -63,7 +62,7 @@ docker build -t dms .
 
 2) If you are using GitHub registry, create new token to have ability to pull the images from GitHub registry.  
 Create new token with `read:packages` scope. To do that go to `https://github.com/settings/tokens/new?scopes=write:packages` page. After, set registry auth info in `deployment/secret.yml`.   
-At the end, apply secret with `kubectl apply -f secret.yml` command.  
+At the end, apply secret with `kubectl apply -f deployment/secret.yml` command.  
 
 3) Run the following command to create a new secret that is used with docker registries.
 ```sh
@@ -73,8 +72,7 @@ kubectl create secret docker-registry registry-secret \
   --docker-password=REGISTRY_PASS \  
   --docker-email=REGISTRY_EMAIL
 ```
-
-4) If you want to list images of the registry, Run the following command:
+4) If you want to list images of the GitHub Docker registry, Run the following command:
 ```sh
 curl -H "Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN" \
      -H "Accept: application/vnd.github.v3+json" \
@@ -89,19 +87,37 @@ openssl genrsa -out certs/jwt_keypair.pem 2048
 openssl rsa -in certs/jwt_keypair.pem -pubout -out certs/jwt_publickey.crt
 openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in certs/jwt_keypair.pem -out certs/jwt_pkcs8.key
 ```
-Then copy their values in `secret.yml`. `JWT_PRIVATE_KEY_FILE_PATH` in the `.env` file represents the contents of `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY_FILE_PATH` in the `.env` file represents `JWT_PUBLIC_KEY`.  
+Then copy their values in `deployment/secret.yml`. `JWT_PRIVATE_KEY_FILE_PATH` in the `.env` file represents the contents of `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY_FILE_PATH` in the `.env` file represents `JWT_PUBLIC_KEY`. In production, the `JWT_PUBLIC_KEY_FILE_PATH` and `JWT_PRIVATE_KEY_FILE_PATH` are useless.  
 
 6) Apply kubernetes secret and configmap resources:
 ```sh
-kubectl apply -f configmap.yml -f secret.yml
+kubectl apply -f deployment/configmap.yml -f deployment/secret.yml
+```  
+7) Init persistent volume claim to use in PSQL deployment:
+```sh
+kubectl apply -f deployment/psql/psql-volume-claim.yml
+```  
+9) deploy PostgreSQL:
+```sh
+kubectl apply -f deployment/psql/psql-deployment.yml -f deployment/psql/psql-service.yml 
+```
+If you need to connect a URL to your Postgres service, run the following code. But note taht edit the file.  
+```sh
+kubectl apply -f deployment/psql/psql-ingress.yml
+```  
+10) Deploy Redis:
+```sh
+kubectl apply -f deployment/redis/redis-deployment.yml -f deployment/redis/redis-service.yml
+```  
+11) Apply DMS deployment:
+```sh
+kubectl apply -f deployment/dms/dms-deployment.yml -f deployment/dms/dms-service.yml -f deployment/dms/dms-ingress.yml
 ```
 
-7) Apply DMS deployment:
-```sh
-kubectl apply -f deployment.yml
-```
 
-8) Init persistent volume:
-```sh
-kubectl apply -f deployment/psql/persistent-vol.yaml
-```
+get list of pods related to a deployment resource:
+kubectl get pods --selector=app=<app-name>
+deleting a pod:
+kubectl delete pods <pod-name>
+Deleting an ingress:
+kubectl delete ingress <ingress-name>

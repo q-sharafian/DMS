@@ -26,8 +26,10 @@ spec:
             requests:
               cpu: 300m
               memory: 600Mi
+              ephemeral-storage: 1Gi
             limits:
               cpu: 300m
               memory: 600Mi
+              ephemeral-storage: 1Gi
       imagePullSecrets:
         - name: registry-secret

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce # or ReadWriteMany if your storage provider supports it
+  resources:
+    requests:
+      storage: 2Gi # Adjust the storage size as needed
+  storageClassName: csi-cinder-sc-delete-az # or your preferred StorageClass

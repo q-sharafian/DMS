@@ -193,6 +193,9 @@ func NewPsqlConn(conn *PsqlConnDetails, doAutoMigrate bool, logger l.Logger) PSQ
 	sqlDB.SetMaxOpenConns(conn.MAxOpenConns)
 	sqlDB.SetConnMaxLifetime(conn.MaxConnLifetime)
 
+	if result := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"); result.Error != nil {
+		logger.Panicf("Failed to create extension 'uuid-ossp' in database '%s'", conn.DB)
+	}
 	logger.Infof("Connected to database '%s' successfully.", conn.DB)
 	return *db
 }

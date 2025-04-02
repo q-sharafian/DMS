@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dms-ingress
+spec:
+  rules:
+    - host: dms-1b34d01272-dms.apps.ir-central1.arvancaas.ir # Your domain name
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dms-service # Your Service name
+                port:
+                  number: 7956 # Service's targetPort

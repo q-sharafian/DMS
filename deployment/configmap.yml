@@ -8,5 +8,5 @@ data:
   GIN_PORT: "8080"
   JWT_EXPIRED_TIME_MIN: "10000"
   
-  PSQL_HOST: localhost
-  PSQL_PORT: 5432
+  PSQL_HOST: "postgresdb-service"
+  PSQL_PORT: "5432"
