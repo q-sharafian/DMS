@@ -39,7 +39,7 @@ func (s *sEventService) CreateEvent(event m.Event, userID m.ID) (*m.ID, *e.Error
 		return nil, e.NewErrorP("error in checking if user exists: %s", SEDBError, err.Error())
 	} else if !isExistsUser {
 		return nil, e.NewErrorP("There's not any user with id %s have job position id %s",
-			SENotFound, userID.ToString(), event.CreatedBy.ToString())
+			SENotFound, userID.String(), event.CreatedBy.String())
 	}
 
 	newEvent := m.Event{
@@ -58,7 +58,7 @@ func (s *sEventService) CreateEvent(event m.Event, userID m.ID) (*m.ID, *e.Error
 func (s *sEventService) GetEventOwner(eventID m.ID) (*m.ID, *e.Error) {
 	event, err := s.event.GetEventByID(eventID)
 	if err != nil {
-		s.logger.Debugf("Failed to get event by id %s (%s)", eventID.ToString(), err.Error())
+		s.logger.Debugf("Failed to get event by id %s (%s)", eventID.String(), err.Error())
 		return nil, e.NewErrorP(err.Error(), SEDBError)
 	} else if event == nil {
 		return nil, nil

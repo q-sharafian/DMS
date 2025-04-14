@@ -1,12 +1,31 @@
-A user could have multiple job positions (jp).
+A user could have multiple job positions (jp).  
 both a web page and a Windows app's user interface are considered views in the MVC (Model-View-Controller) architectural pattern.
 Try write all of logs in the controllers package except some exceptations. For example, you can write Debug and Info logs in other packages too. But try to write error or fatal logs in controllers package.
 
 If we're going to delete a row in database, it has to be a soft delete. That is, the row can't be deleted, just something like a label has to be used to show that it's been deleted.
 
 The hierarchy tree is not connected tree. It means some job-positions could have not any parents or creators.
+job-positions that have not any parents, could access all things. (docs, events, and etc)
 
 psql -U mohammad -d dms -h localhost -p 5432
+
+Download/Upload policy is simple; If the job position have access to an event, then he could upload/download files.
+
+**Sample of upload/downlaod file request:**
+`auth-token` structure is as this: `event-id:jwt:job-position-id`. Then it must be encoded with `base64`.  
+
+- Upload:  
+```json
+{
+  "auth-token": "your-token",
+  "object-types":{
+    "jpg": 10,
+    "pdf": 1
+  }
+}
+```
+
+TODO: Set redis memory cleaning policy
 
 jwt has two header field:   
 ```js
@@ -113,10 +132,20 @@ kubectl apply -f deployment/redis/redis-deployment.yml -f deployment/redis/redis
 ```sh
 kubectl apply -f deployment/dms/dms-deployment.yml -f deployment/dms/dms-service.yml -f deployment/dms/dms-ingress.yml
 ```
-
+12) Init `file-transfer` container. First set env variables inside `deployment/file-transfer/file-transfer-configmap.yml` and `deployment/file-transfer/file-transfer-secret.yml` file. Then apply resources:
+```sh
+kubectl apply \
+-f deployment/file-transfer/file-transfer-configmap.yml \
+-f deployment/file-transfer/file-transfer-secret.yml \
+-f deployment/file-transfer/file-transfer-deployment.yml \
+-f deployment/file-transfer/file-transfer-service.yml \
+-f deployment/file-transfer/file-transfer-ingress.yml
+```
+13) If you want to send HTTP request to the `file-transfer`, send the request to the url `http://host-addr:80/downloadOrUpload`.
 
 get list of pods related to a deployment resource:
 kubectl get pods --selector=app=<app-name>
+kubectl get pods -l app=<app-name>
 deleting a pod:
 kubectl delete pods <pod-name>
 Deleting an ingress:

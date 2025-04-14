@@ -15,7 +15,8 @@ type InMemoryIterator interface {
 }
 
 type InMemoryDAL interface {
-	Get(key string) (string, error)
+	// If both returned string and error be nil, means there's not such key
+	Get(key string) (*string, error)
 	Set(key, value string) error
 	Delete(key string) error
 	// Clear the key-values in im-memory cache that their keys match the pattern.
@@ -24,6 +25,11 @@ type InMemoryDAL interface {
 	Size(pattern string) (int, error)
 	// Returns the keys that match the pattern
 	Scan(pattern string) (InMemoryIterator, error)
+	// Try deleting multiple times if couldn't delete key-value.
+	// If tryTimes be zero, try to delete an entity and if couldn't, return error.
+	// If try times be one, try to delete entity and if couldn't, tries one more time to
+	// delete and return error if couldn't delete.
+	DeleteWithTry(key string, tryTimes int) error
 }
 
 type redisInMemoeyDAL struct {
@@ -39,8 +45,12 @@ func (r *redisInMemoeyDAL) Delete(key string) error {
 	return r.db.Delete(key)
 }
 
-func (r *redisInMemoeyDAL) Get(key string) (string, error) {
-	return r.db.Get(key)
+func (r *redisInMemoeyDAL) Get(key string) (*string, error) {
+	val, err := r.db.Get(key)
+	if err == redis.Nil {
+		return nil, nil
+	}
+	return &val, err
 }
 
 func (r *redisInMemoeyDAL) Set(key string, value string) error {
@@ -59,6 +69,20 @@ func (r *redisInMemoeyDAL) Scan(pattern string) (InMemoryIterator, error) {
 	return &redisInMemoryIterator{iter, context.Background()}, nil
 }
 
+func (r *redisInMemoeyDAL) DeleteWithTry(key string, tryTimes int) error {
+	err := r.Delete(key)
+	if tryTimes <= 0 || err == nil {
+		return err
+	}
+
+	for i := 0; i < tryTimes; i++ {
+		err = r.Delete(key)
+		if err == nil {
+			return nil
+		}
+	}
+	return err
+}
 func NewRedisInMemoeyDAL(connDetails *db.RedisConnDetails, logger l.Logger) InMemoryDAL {
 	redisClient := db.NewRedisConn(connDetails, logger)
 	logger.Infof("Created an instance of Redis in-memory database")

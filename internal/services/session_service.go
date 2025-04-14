@@ -32,7 +32,7 @@ type SessionService interface {
 	//
 	// Possible error codes:
 	// SEAuthFailed- SENotFound- SEDBError
-	ValidateSessionJWT(token string) (*m.JWT, *e.Error)
+	ValidateSessionJWT(token m.Token) (*m.JWT, *e.Error)
 	// If both error and session be nil, means there's not any matched session.
 	// (whether disabled, removed, and etc.)
 	//
@@ -83,14 +83,14 @@ const (
 func (s *sSessionService) DeleteSession(jwt *m.JWT) *e.Error {
 	session, err := s.session.GetSessionByID(jwt.JTI)
 	if err != nil {
-		return e.NewErrorP("failed to get session id %s. (%s)", SEDBError, jwt.JTI.ToString(), err.Error())
+		return e.NewErrorP("failed to get session id %s. (%s)", SEDBError, jwt.JTI.String(), err.Error())
 	} else if session == nil {
-		return e.NewErrorP("session with id %s id deleted/deactivated previously", SEDeletedPreviously, jwt.JTI.ToString())
+		return e.NewErrorP("session with id %s id deleted/deactivated previously", SEDeletedPreviously, jwt.JTI.String())
 	}
 	// Check if the current user is the owner of the session.
 	if session.UserID != jwt.UserID {
 		return e.NewErrorP("session id %s does not belongs to user id %s", SENotFound,
-			jwt.JTI.ToString(), jwt.UserID.ToString())
+			jwt.JTI.String(), jwt.UserID.String())
 	}
 
 	result, err := s.session.DeleteSession(jwt.JTI)
@@ -99,7 +99,7 @@ func (s *sSessionService) DeleteSession(jwt *m.JWT) *e.Error {
 	} else if !result && err != nil {
 		return e.NewErrorP("failed to delete session id %s. (%s)", SEDBError, jwt.JTI, err.Error())
 	} else if !result && err == nil {
-		return e.NewErrorP("session id %s not found", SENotFound, jwt.JTI.ToString())
+		return e.NewErrorP("session id %s not found", SENotFound, jwt.JTI.String())
 	}
 	s.logger.Panicf("Unexpected DeleteSession result. result: %+v, err: %s", result, err.Error())
 	return nil
@@ -139,7 +139,7 @@ func (s *sSessionService) CreateSessionJustByPhone(details *m.PhoneBasedLoginInf
 	}
 }
 
-func (s *sSessionService) ValidateSessionJWT(token string) (*m.JWT, *e.Error) {
+func (s *sSessionService) ValidateSessionJWT(token m.Token) (*m.JWT, *e.Error) {
 	validJWT, validationErr := s.validateJWT(token)
 	if validationErr != nil {
 		return nil, validationErr.AppendBegin("failed to validate JWT token")
@@ -154,12 +154,12 @@ func (s *sSessionService) ValidateSessionJWT(token string) (*m.JWT, *e.Error) {
 	return validJWT, nil
 }
 
-func (s *sSessionService) validateJWT(token string) (*m.JWT, *e.Error) {
+func (s *sSessionService) validateJWT(token m.Token) (*m.JWT, *e.Error) {
 	if token == "" {
 		return nil, e.NewErrorP("JWT token is empty", SEAuthFailed)
 	}
 	// This method checks expiration and issuer time too. So we don't need to check both.
-	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
+	parsedToken, err := jwt.Parse(token.String(), func(t *jwt.Token) (any, error) {
 		// It's type assertion
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("JWT token is invalid")
@@ -181,7 +181,7 @@ func (s *sSessionService) validateJWT(token string) (*m.JWT, *e.Error) {
 		jtiID, jtiErr := m.ID{}.FromString2(jti)
 
 		s.logger.Debugf("Received jwt: {sub: %s, jp_id: %s, iat: %f, exp: %f, jti: %s}. Parsed IDs: {sub:%s, jp_id: %s, jti: %s}",
-			sub, jp, iat, exp, jti, userID.ToStringP(), jPID.ToStringP(), jtiID.ToStringP())
+			sub, jp, iat, exp, jti, userID.StringP(), jPID.StringP(), jtiID.StringP())
 
 		if okSub && okIat && okExp && okJP && okJti && userErr == nil && jpErr == nil && jtiErr == nil {
 			// Validate time of token such that IAT < now < EXP
@@ -231,12 +231,12 @@ func (s *sSessionService) GetSessionByID(sessionID *m.ID) (*m.Session, *e.Error)
 // SEEncodingError
 func (s *sSessionService) generateJWT(j *m.JWT) (string, *e.Error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"sub":     j.UserID.ToString(),
-		"jp_id":   j.JPID.ToStringP(),
+		"sub":     j.UserID.String(),
+		"jp_id":   j.JPID.StringP(),
 		"iat":     j.IAT,
 		"exp":     j.EXP,
-		"jti":     j.JTI.ToString(),
-		"user_id": j.UserID.ToString(),
+		"jti":     j.JTI.String(),
+		"user_id": j.UserID.String(),
 	})
 
 	tokenString, err := token.SignedString(&s.rsaPrivateKey)

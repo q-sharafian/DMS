@@ -60,7 +60,7 @@ func (s *sJPService) CreateUserJP(jp *m.UserJobPosition, permissions *m.Permissi
 			AppendBegin(
 				fmt.Sprintf(
 					"failed to create job position for userID %s",
-					jp.UserID.ToString(),
+					jp.UserID.String(),
 				),
 			)
 	}
@@ -71,12 +71,12 @@ func (s *sJPService) CreateUserJP(jp *m.UserJobPosition, permissions *m.Permissi
 	defer close(responseErr)
 	addEdge <- graph.GraphChange{
 		Type:        graph.AddEdge,
-		Edge:        *jpEdge2GraphEdge(dal.JPEdge{JP: *jpID, Parent: &jp.ParentID}),
+		Edge:        *jpEdge2GraphEdge(dal.JPEdge{JP: *jpID, Parent: jp.ParentID}),
 		ResponseErr: responseErr,
 	}
 	err = <-responseErr
 	if err != nil {
-		return nil, e.NewErrorP("failed to update hierarchy tree: %s", InMemoryUpdateFailed, err.Error())
+		return nil, e.NewErrorP("failed to update hierarchy tree: %s", SEInMemoryUpdateFailed, err.Error())
 	}
 	s.hierarchy.Graph().ProcessChanges(addEdge)
 	return jpID, nil
@@ -91,7 +91,7 @@ func (s *sJPService) CreateAdminJP(jp *m.AdminJobPosition, permissions *m.Permis
 			AppendBegin(
 				fmt.Sprintf(
 					"failed to create job position for userID %s",
-					jp.UserID.ToString(),
+					jp.UserID.String(),
 				),
 			)
 	}

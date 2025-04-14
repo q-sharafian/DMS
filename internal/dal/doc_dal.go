@@ -16,14 +16,19 @@ type DocDAL interface {
 	GetLastEventDocByUserID(event_id m.ID, user_id m.ID) (doc *m.Doc, event_name string, user_name string, err error)
 }
 
+const (
+	cacheKeyUserByID = "doc:id:%s"
+)
+
 // It's an implementaion of DocDAL interface
 type psqlDocDAL struct {
+	cache  *cache
 	db     *db.PSQLDB
 	logger l.Logger
 }
 
-func newPsqlDocDAL(db *db.PSQLDB, logger l.Logger) *psqlDocDAL {
-	return &psqlDocDAL{db, logger}
+func newPsqlDocDAL(db *db.PSQLDB, cache *cache, logger l.Logger) DocDAL {
+	return &psqlDocDAL{cache, db, logger}
 }
 
 func (d *psqlDocDAL) CreateDoc(doc *m.Doc) (*m.ID, error) {
@@ -50,7 +55,7 @@ func (d *psqlDocDAL) GetNLastDocByEventID(eventID m.ID, n int) (*[]m.Doc, error)
 	).Find(&docs)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get last %d docs in the  event-id %s (%s)", n, eventID.ToString(), result.Error.Error())
+		d.logger.Debugf("Failed to get last %d docs in the  event-id %s (%s)", n, eventID.String(), result.Error.Error())
 		return nil, result.Error
 	}
 

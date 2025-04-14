@@ -45,7 +45,7 @@ func (s *sAuthorizationService) IsAncestor(ancestorID, nodeID m.ID) (bool, *e.Er
 	isAncestor, err := s.hierarchy.IsAncestor(id2Vertex(ancestorID), id2Vertex(nodeID))
 	if err != nil {
 		return false, e.NewErrorP("failed to check if ancestor id %s is an ancestor of node id %s: %s",
-			SEDBError, ancestorID.ToString(), nodeID.ToString(), err.Error())
+			SEDBError, ancestorID.String(), nodeID.String(), err.Error())
 	}
 	return isAncestor, nil
 }

@@ -2,7 +2,10 @@ package graph
 
 type Vertex []byte
 
-func (v Vertex) equals(other Vertex) bool     { return string(v) == string(other) }
+// Represent nil-value for Vertex
+var NilVertex Vertex = Vertex([]byte("00000000"))
+
+func (v Vertex) Equals(other Vertex) bool     { return string(v) == string(other) }
 func (v Vertex) string() string               { return string(v) }
 func (v Vertex) str2Vertex(str string) Vertex { return Vertex(str) }
 
@@ -13,7 +16,7 @@ type Edge struct{ Start, End Vertex }
 // Represent nil-value
 var NilEdge Edge = Edge{Start: nil, End: nil}
 
-func (e *Edge) equals(other Edge) bool { return e.Start.equals(other.Start) && e.End.equals(other.End) }
+func (e *Edge) equals(other Edge) bool { return e.Start.Equals(other.Start) && e.End.Equals(other.End) }
 func (e *Edge) isNil() bool            { return e.equals(NilEdge) }
 func (e *Edge) string() string {
 	return string(e.Start) + ":" + string(e.End)
@@ -21,7 +24,8 @@ func (e *Edge) string() string {
 
 // storage defines the interface for cache storage implementations
 type storage interface {
-	Get(edge Edge) (bool, bool) // Returns (value, exists)
+	// Return (value, error). If there's not such key, the error type would be "e.ErrNotFound"
+	Get(edge Edge) (bool, error)
 	Set(edge Edge, value bool) error
 	Delete(edge Edge)
 	// Clear graph cache

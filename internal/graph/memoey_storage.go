@@ -1,6 +1,7 @@
 package graph
 
 import (
+	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	"fmt"
 	"strings"
@@ -26,11 +27,14 @@ func NewMemoryStorage(logger l.Logger) storage {
 func (s *memoryStorage) makeKey(pair Edge) string {
 	return fmt.Sprintf("%s:%s", pair.Start, pair.End)
 }
-func (s *memoryStorage) Get(key Edge) (bool, bool) {
+func (s *memoryStorage) Get(key Edge) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	val, exists := s.data[s.makeKey(key)]
-	return val, exists
+	if !exists {
+		return false, e.ErrNotFound
+	}
+	return val, nil
 }
 
 func (s *memoryStorage) Set(key Edge, value bool) error {
@@ -63,7 +67,7 @@ func (s *memoryStorage) DeleteByPrefix(start Vertex) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for key := range s.data {
-		if s.getStartVertex(key).equals(start) {
+		if s.getStartVertex(key).Equals(start) {
 			delete(s.data, key)
 		}
 	}

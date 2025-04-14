@@ -36,10 +36,10 @@ func (d *psqlPermissionDAL) GetPermissionsByJPID(jpID m.ID) (*m.Permission, erro
 		Limit(1).First(permission)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get permission for job position-id %s: %s", jpID.ToString(), result.Error.Error())
+		d.logger.Debugf("Failed to get permission for job position-id %s: %s", jpID.String(), result.Error.Error())
 		return nil, result.Error
 	} else if result.RowsAffected < 1 {
-		d.logger.Warnf(`It seems can't get permission for job position-id %s.`, jpID.ToString())
+		d.logger.Warnf(`It seems can't get permission for job position-id %s.`, jpID.String())
 		return nil, nil
 	}
 	return dbPermission2Model(permission), nil
@@ -49,7 +49,7 @@ func (d *psqlPermissionDAL) CreateJPPermission(permission *m.Permission) error {
 	dbPermission := modelPermission2DB(permission)
 	result := d.db.Create(dbPermission)
 	if result.Error != nil {
-		err := fmt.Errorf("failed to create permission for job position-id %s: %s", permission.JPID.ToString(), result.Error.Error())
+		err := fmt.Errorf("failed to create permission for job position-id %s: %s", permission.JPID.String(), result.Error.Error())
 		return err
 	}
 	return nil

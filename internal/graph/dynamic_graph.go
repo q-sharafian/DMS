@@ -1,8 +1,11 @@
 package graph
 
 import (
+	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	"container/list"
+	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -31,16 +34,21 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 	pair := Edge{Start: start, End: end}
 
 	// Check cache first
-	if result, exists := g.cache.Get(pair); exists {
-		return result, nil
+	if hasPath, err := g.cache.Get(pair); err != nil && !errors.Is(err, e.ErrNotFound) {
+		return false, fmt.Errorf("error in checking existing path from %s to %s: %s",
+			start.string(), end.string(), err.Error())
+	} else if err == nil {
+		return hasPath, nil
 	}
 
 	g.mu.Lock()
 	defer g.mu.Unlock()
-
 	// Check cache again after acquiring write lock
-	if result, exists := g.cache.Get(pair); exists {
-		return result, nil
+	if hasPath, err := g.cache.Get(pair); err != nil && !errors.Is(err, e.ErrNotFound) {
+		return false, fmt.Errorf("error in checking existing path from %s to %s: %s",
+			start.string(), end.string(), err.Error())
+	} else if err == nil {
+		return hasPath, nil
 	}
 
 	// BFS implementation
@@ -49,7 +57,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 	queue.PushBack(start)
 	for queue.Len() > 0 {
 		vertex := queue.Remove(queue.Front()).(Vertex)
-		if vertex.equals(end) {
+		if vertex.Equals(end) {
 			if err := g.cache.Set(pair, true); err != nil {
 				return false, err
 			}
@@ -59,7 +67,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 		if _, seen := visited[vertex.string()]; !seen {
 			visited[vertex.string()] = struct{}{}
 			// Cache intermediate results
-			if vertex.equals(start) {
+			if vertex.Equals(start) {
 				if err := g.cache.Set(Edge{Start: start, End: vertex}, true); err != nil {
 					return false, err
 				}
@@ -82,7 +90,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 	return false, nil
 }
 
-// addEdge adds a directed edge from u to v
+// addEdge adds a directed edge from u to v.
 func (g *DynamicGraph) addEdge(u, v Vertex) error {
 	u_str := u.string()
 	v_str := v.string()
@@ -137,10 +145,15 @@ func (g *DynamicGraph) LimitCacheSize(maxSize int) error {
 	return nil
 }
 
+// Return number of vertices of the graph
 func (g *DynamicGraph) Size() (int, error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	return g.cache.Size()
+	count := 0
+	for _, neighbors := range g.graph {
+		count += len(neighbors)
+	}
+	return count, nil
 }
 
 type GraphChangeType int
@@ -159,10 +172,10 @@ type GraphChange struct {
 // ProcessChanges processes and aplies changes to the graph
 func (g *DynamicGraph) ProcessChanges(changes <-chan GraphChange) {
 	for change := range changes {
-		if change.Edge.isNil() {
-			change.ResponseErr <- nil
-			continue
-		}
+		// if change.Edge.isNil() {
+		// 	change.ResponseErr <- nil
+		// 	continue
+		// }
 		switch change.Type {
 		case AddEdge:
 			change.ResponseErr <- g.addEdge(change.Edge.Start, change.Edge.End)
@@ -171,4 +184,19 @@ func (g *DynamicGraph) ProcessChanges(changes <-chan GraphChange) {
 		}
 
 	}
+}
+
+// Returns a string representation of the graph
+func (g *DynamicGraph) String() string {
+	var strGraph string
+	for u, neighbors := range g.graph {
+		strGraph += fmt.Sprintf("  %s -> %v\n", u, func() []string {
+			neighborsSlice := make([]string, 0, len(neighbors))
+			for neighbor := range neighbors {
+				neighborsSlice = append(neighborsSlice, neighbor)
+			}
+			return neighborsSlice
+		}())
+	}
+	return strGraph
 }

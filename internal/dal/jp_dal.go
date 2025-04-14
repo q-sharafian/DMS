@@ -38,11 +38,12 @@ type JPDAL interface {
 
 type psqlJPDAL struct {
 	db     *db.PSQLDB
+	cache  *cache
 	logger l.Logger
 }
 
-func newPsqlJPDAL(db *db.PSQLDB, logger l.Logger) *psqlJPDAL {
-	return &psqlJPDAL{db, logger}
+func newPsqlJPDAL(db *db.PSQLDB, cache *cache, logger l.Logger) *psqlJPDAL {
+	return &psqlJPDAL{db, cache, logger}
 }
 
 func (d *psqlJPDAL) CreateUserJP(jp *m.UserJobPosition) (*m.ID, error) {
@@ -178,7 +179,7 @@ func (d *psqlJPDAL) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
 	result := d.db.Where("user_id = ? AND id = ?", userID, jpID).Limit(1).Find(&jp)
 	if result.Error != nil {
 		return false, fmt.Errorf("failed to check if user with id %s has job position with id %s: %s",
-			userID.ToString(), jpID.ToString(), result.Error.Error())
+			userID.String(), jpID.String(), result.Error.Error())
 	} else if result.RowsAffected < 1 {
 		return false, nil
 	} else {
@@ -187,8 +188,9 @@ func (d *psqlJPDAL) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
 }
 
 type JPEdge struct {
-	JP     m.ID
-	Parent *m.ID
+	JP m.ID
+	// If jp doesn't have any parent, the parent would be NilID
+	Parent m.ID
 }
 
 func (d *psqlJPDAL) getSomeJPIDs(limit, offset int) (*[]JPEdge, error) {
@@ -202,7 +204,7 @@ func (d *psqlJPDAL) getSomeJPIDs(limit, offset int) (*[]JPEdge, error) {
 	for i := range list {
 		jpIDs[i].JP = *dbID2ModelID(&list[i].ID)
 		if list[i].ParentID != nil {
-			jpIDs[i].Parent = dbID2ModelID(list[i].ParentID)
+			jpIDs[i].Parent = *dbID2ModelID(list[i].ParentID)
 		}
 	}
 	return &jpIDs, nil

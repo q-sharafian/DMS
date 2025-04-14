@@ -40,16 +40,16 @@ func (s *sDocService) CreateDoc(doc *m.Doc, userID m.ID) (*m.ID, *e.Error) {
 		return nil, e.NewErrorP("error in checking if user exists: %s", SEDBError, err.Error())
 	} else if !isExistsUser {
 		return nil, e.NewErrorP("there's not any user with id %s that have job position id %s",
-			SENotFound, userID.ToString(), doc.CreatedBy.ToString())
+			SENotFound, userID.String(), doc.CreatedBy.String())
 	}
 	// Just job position who created the event could create document for that.
 	if eventOwner, err := s.event.GetEventOwner(doc.EventID); err != nil {
 		return nil, e.NewErrorP(err.Error(), SEDBError)
 	} else if eventOwner == nil {
-		return nil, e.NewErrorP("Event with id %s not found", SEEventNotFound, doc.EventID.ToString())
+		return nil, e.NewErrorP("Event with id %s not found", SEEventNotFound, doc.EventID.String())
 	} else if *eventOwner != doc.CreatedBy {
 		return nil, e.NewErrorP("The job position %s is not ownwe of the event %s",
-			SEEventOwnerMismatched, doc.CreatedBy.ToString(), doc.EventID.ToString())
+			SEEventOwnerMismatched, doc.CreatedBy.String(), doc.EventID.String())
 	}
 
 	eventID, err := s.doc.CreateDoc(doc)
@@ -65,7 +65,7 @@ func (s *sDocService) GetNLastDocByEventID(eventID, userID m.ID, eventCreatedByI
 		if err != nil {
 			return nil, e.NewErrorP(err.Error(), SEDBError)
 		} else if eventOwner == nil {
-			return nil, e.NewErrorP("event with id %s not found", SEWrongParameter, eventID.ToString())
+			return nil, e.NewErrorP("event with id %s not found", SEWrongParameter, eventID.String())
 		}
 		eventCreatedByID = eventOwner
 	}
@@ -84,7 +84,7 @@ func (s *sDocService) GetNLastDocByEventID(eventID, userID m.ID, eventCreatedByI
 		return nil, e.NewErrorP(err2.Error(), SEDBError)
 	} else if !isAncestor {
 		return nil, e.NewErrorP("you don't have permission to read docs of event with id %s",
-			SENotAncestor, eventID.ToString())
+			SENotAncestor, eventID.String())
 	}
 	docs, err := s.doc.GetNLastDocByEventID(eventID, n)
 	if err != nil {
@@ -94,7 +94,8 @@ func (s *sDocService) GetNLastDocByEventID(eventID, userID m.ID, eventCreatedByI
 }
 
 // Create an instance of sDocService struct
-func newSDocService(doc dal.DocDAL, permissionService AuthorizationService, eventService EventService, jpService JPService, logger l.Logger) DocService {
+func newSDocService(doc dal.DocDAL, permissionService AuthorizationService, eventService EventService,
+	jpService JPService, logger l.Logger) DocService {
 	return &sDocService{
 		doc,
 		logger,

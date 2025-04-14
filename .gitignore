@@ -4,3 +4,5 @@ main
 *.crt
 .env
 deployment/secret.yml
+DMS.code-workspace
+deployment/file-transfer/file-transfer-secret.yml

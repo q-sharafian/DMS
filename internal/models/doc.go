@@ -32,9 +32,9 @@ func (s Doc) MarshalJSON() ([]byte, error) {
 		Paths     []MediaPath `json:"media_paths"`
 		CreatedAt int64       `json:"created_at"`
 	}{
-		ID:        s.ID.ToString(),
-		CreatedBy: s.CreatedBy.ToString(),
-		EventID:   s.EventID.ToString(),
+		ID:        s.ID.String(),
+		CreatedBy: s.CreatedBy.String(),
+		EventID:   s.EventID.String(),
 		Context:   s.Context,
 		Paths:     s.Paths,
 		CreatedAt: s.CreatedAt,

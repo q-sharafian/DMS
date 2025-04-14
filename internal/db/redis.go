@@ -41,6 +41,7 @@ func NewRedisConn(conn *RedisConnDetails, logger l.Logger) *RedisStorage {
 	}
 }
 
+// If the key doesn't exists, returns ("", redis.Nil)
 func (s *RedisStorage) Get(key string) (string, error) {
 	val, err := s.client.Get(s.ctx, key).Result()
 	return val, err

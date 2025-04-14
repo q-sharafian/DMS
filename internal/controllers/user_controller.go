@@ -36,7 +36,7 @@ func (h *UserHttp) CreateUser(c *gin.Context) {
 	}
 	id, err := h.userService.CreateUser(user.Name, user.PhoneNumber, *user.CreatedBy)
 	if err == nil {
-		h.logger.Debugf("Created user with id %s successfully", id.ToString())
+		h.logger.Debugf("Created user with id %s successfully", id.String())
 		successResp(c, MsgUserCreated, newIDResponse(*id))
 		return
 	}
@@ -71,7 +71,7 @@ func (h *UserHttp) CreateAdmin(c *gin.Context) {
 	id, err := h.userService.CreateAdmin(user.Name, user.PhoneNumber)
 	if err == nil {
 		successResp(c, MsgAdminCreated, newIDResponse(*id))
-		h.logger.Debugf("Created admin with id %s successfully", id.ToString())
+		h.logger.Debugf("Created admin with id %s successfully", id.String())
 		return
 	}
 	switch code := err.GetCode(); code {

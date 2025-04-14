@@ -10,12 +10,12 @@ type ID uuid.UUID
 
 var NilID = ID(uuid.Nil)
 
-func (i ID) ToString() string {
+func (i ID) String() string {
 	return uuid.UUID(i).String()
 }
 
 // If the ID is nil, return an empty string
-func (i *ID) ToStringP() string {
+func (i *ID) StringP() string {
 	if i == nil {
 		return ""
 	}
@@ -58,6 +58,10 @@ func (i ID) IsNil() bool {
 	return uuid.UUID(i) == uuid.Nil
 }
 
+func (i ID) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + i.String() + "\""), nil
+}
+
 // Convert input value to the ID data type.
 func (i *ID) UnmarshalJSON(data []byte) error {
 	str := string(data[:])
@@ -84,3 +88,13 @@ const (
 	IsNotDisabled Disability = 0
 	IsDisabled    Disability = 1
 )
+
+type Token string
+
+func (t Token) String() string {
+	return string(t)
+}
+
+func Str2Token(str string) Token {
+	return Token(str)
+}

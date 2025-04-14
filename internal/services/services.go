@@ -44,7 +44,11 @@ const (
 	SEEventOwnerMismatched = 14
 	// Some data in the in-memory database failed to update. Although, it doesn't effect
 	// the data in the database. Means the main action is successful.
-	InMemoryUpdateFailed = 15
+	SEInMemoryUpdateFailed = 15
+	// An internal error could be database error, network error, and etc
+	SEInternal = 16
+	// The user/job position is denied to perform the action
+	SEForbidden = 17
 )
 
 type Service struct {
@@ -54,10 +58,12 @@ type Service struct {
 	User          UserService
 	Authorization AuthorizationService
 	Session       SessionService
+	FilePer       FilePermissionService
 }
 
-// Create a new simple service
-func NewSService(dal *dal.DAL, hierarchy *hierarchy.HierarchyTree, logger l.Logger) Service {
+// Create a new service
+func NewService(dal *dal.DAL, hierarchy *hierarchy.HierarchyTree, cache dal.InMemoryDAL, logger l.Logger) Service {
+	// Fetching job position relations
 	// TODO: handle limit value in a better way
 	batchSize := 500
 	jpIter := dal.JP.GetJPEdgeIter(batchSize)
@@ -83,33 +89,40 @@ func NewSService(dal *dal.DAL, hierarchy *hierarchy.HierarchyTree, logger l.Logg
 		}
 	}
 	edgeCount, _ := hierarchy.Graph().Size()
-	logger.Infof("Added %d edges to the graph", edgeCount)
+	logger.Infof("Added %d vertices to the hierarchy graph", edgeCount)
+	logger.Debugf("The graph:\n%s", hierarchy.Graph().String())
 
-	authorization := newSAuthorizationService(*hierarchy, dal.Permission, logger)
+	session := newSSessionService(dal.Session, dal.User, logger)
 	jp := newSJPService(dal.JP, hierarchy, logger)
 	event := newSEventService(dal.Event, jp, logger)
+	authorization := newSAuthorizationService(*hierarchy, dal.Permission, logger)
+	filePermission := newSFilePermissionService(cache, session, dal.Event, authorization, logger)
 	s := Service{
 		Doc:           newSDocService(dal.Doc, authorization, event, jp, logger),
 		Event:         event,
 		JP:            jp,
 		User:          newSUserService(dal.User, dal.JP, logger),
 		Authorization: authorization,
-		Session:       newSSessionService(dal.Session, dal.User, logger),
+		Session:       session,
+		FilePer:       filePermission,
 	}
 	return s
 }
 
-// If result be "NilEdge", means parent is nil. So there's not an edge.
+func (s *Service) FilePermission() FilePermissionService {
+	return s.FilePer
+}
+
 func jpEdge2GraphEdge(jpEdge dal.JPEdge) *graph.Edge {
-	if jpEdge.Parent == nil {
-		return &graph.NilEdge
-	}
 	return &graph.Edge{
-		Start: id2Vertex(*jpEdge.Parent),
+		Start: id2Vertex(jpEdge.Parent),
 		End:   id2Vertex(jpEdge.JP),
 	}
 }
 
 func id2Vertex(id m.ID) graph.Vertex {
-	return graph.Vertex(id.ToString())
+	if id.IsNil() {
+		return graph.NilVertex
+	}
+	return graph.Vertex(id.String())
 }

@@ -72,7 +72,7 @@ func (h *SessionHttp) Logout(c *gin.Context) {
 	}
 	err := h.sessionService.DeleteSession(jwt)
 	if err == nil {
-		h.logger.Debugf("Deleted session with id %s.", jwt.JTI.ToString())
+		h.logger.Debugf("Deleted session with id %s.", jwt.JTI.String())
 		successResp(c, MsgSuccessfulLogout, MsgSuccessfulLogout)
 		return
 	}
@@ -81,10 +81,10 @@ func (h *SessionHttp) Logout(c *gin.Context) {
 		h.logger.Errorf("Failed to delete session (%s)", err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	case s.SENotFound:
-		h.logger.Debugf("The session with id %s was not found. (%s)", jwt.JTI.ToString(), err.Error())
+		h.logger.Debugf("The session with id %s was not found. (%s)", jwt.JTI.String(), err.Error())
 		unauthorizedResp(c, MsgSessionNotFound, MsgSessionNotFound)
 	case s.SEDeletedPreviously:
-		h.logger.Debugf("The session with id %s was deleted/deactivated previously. (%s)", jwt.JTI.ToString(), err.Error())
+		h.logger.Debugf("The session with id %s was deleted/deactivated previously. (%s)", jwt.JTI.String(), err.Error())
 		unauthorizedResp(c, MsgSessionNotFound, MsgDeletedSessionPreviously)
 	default:
 		h.logger.Errorf("Unexpected error code %d (%s)", code, err.Error())

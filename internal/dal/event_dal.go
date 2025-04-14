@@ -5,6 +5,8 @@ import (
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"errors"
+	"fmt"
 )
 
 type EventDAL interface {
@@ -15,19 +17,24 @@ type EventDAL interface {
 	GetLastApprovedEventByUserID(id m.ID) (*m.Event, *m.ApprovedEvent, error)
 	// Return all created events by job position id.
 	GetAllCreatedEventsByJPID(jPID m.ID) (*[]m.Event, error)
-	// Return event by its id. If no error occurs and returned event is nil, then there
-	// is no corresponding event with this id.
+	// Return event by its id. If no error occurs and the returned event is nil, then
+	// there is no corresponding event with that id.
 	GetEventByID(eventID m.ID) (*m.Event, error)
 }
+
+const (
+	cacheKeyEventByID = "event:id:%s"
+)
 
 // It's an implementaion of EventDAL interface
 type psqlEventDAL struct {
 	db     *db.PSQLDB
+	cache  *cache
 	logger l.Logger
 }
 
-func newPsqlEventDAL(db *db.PSQLDB, logger l.Logger) *psqlEventDAL {
-	return &psqlEventDAL{db, logger}
+func newPsqlEventDAL(db *db.PSQLDB, cache *cache, logger l.Logger) *psqlEventDAL {
+	return &psqlEventDAL{db, cache, logger}
 }
 
 func (d *psqlEventDAL) CreateEvent(event *m.Event) (*m.ID, error) {
@@ -57,7 +64,7 @@ func (d *psqlEventDAL) GetNLastEventsByJPID(jPID m.ID, n int) (*[]m.Event, error
 	}).Find(&events)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get %s events for job-position-id %d (%s)", n, jPID.ToString(), result.Error.Error())
+		d.logger.Debugf("Failed to get %s events for job-position-id %d (%s)", n, jPID.String(), result.Error.Error())
 		return nil, result.Error
 	}
 	return dbEvents2ModelEvents(events), nil
@@ -74,14 +81,26 @@ func (d *psqlEventDAL) GetAllCreatedEventsByJPID(jpID m.ID) (*[]m.Event, error) 
 
 // TODO: Test it with wrong id to know if it returns nil
 func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
-	var event db.Event
+	var cacheKey = fmt.Sprintf(cacheKeyEventByID, eventID.String())
+	var event m.Event
+	if err := d.cache.read(cacheKey, &event); err != nil && !errors.Is(err, e.ErrNotFound) {
+		d.logger.Debugf("Error in reading value of the key \"%s\" from the cache: %s", cacheKey, err.Error())
+	} else if err == nil {
+		return &event, nil
+	}
+
+	var dbEvent db.Event
 	result := d.db.Where(&db.Event{
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&eventID)},
-	}).Find(&event)
+	}).Find(&dbEvent)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return dbEvent2ModelEvent(&event), nil
+	event = *dbEvent2ModelEvent(&dbEvent)
+	if err := d.cache.write(cacheKey, event); err != nil {
+		d.logger.Debugf("Can't write an entity with key \"%s\" to cache: %s", cacheKey, err.Error())
+	}
+	return &event, nil
 }
 
 func dbEvent2ModelEvent(event *db.Event) *m.Event {

@@ -45,7 +45,7 @@ func (h *EventHttp) CreateEvent(c *gin.Context) {
 
 	id, err := h.eventService.CreateEvent(event, jwt.UserID)
 	if err == nil {
-		h.logger.Debugf("Created event with id %s.", id.ToString())
+		h.logger.Debugf("Created event with id %s.", id.String())
 		successResp(c, MsgEventCreated, newIDResponse(*id))
 		return
 	}

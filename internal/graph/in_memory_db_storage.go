@@ -2,11 +2,10 @@ package graph
 
 import (
 	"DMS/internal/dal"
+	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	"fmt"
 	"io"
-
-	"github.com/redis/go-redis/v9"
 )
 
 type inMemoryDBStorage struct {
@@ -29,15 +28,16 @@ func (s *inMemoryDBStorage) makeKey(pair Edge) string {
 	return fmt.Sprintf("%s:%s:%s", s.prefix, pair.Start, pair.End)
 }
 
-func (s *inMemoryDBStorage) Get(key Edge) (bool, bool) {
-	val, err := s.client.Get(s.makeKey(key))
-	if err == redis.Nil {
-		return false, false
+func (s *inMemoryDBStorage) Get(key Edge) (bool, error) {
+	strKey := s.makeKey(key)
+	val, err := s.client.Get(strKey)
+	if err == nil && val == nil {
+		return false, e.ErrNotFound
 	}
 	if err != nil {
-		return false, false // Handle error appropriately in production
+		return false, fmt.Errorf("error getting cache key-value: %s: %s", strKey, err.Error())
 	}
-	return val == "1", true
+	return *val == "1", nil
 }
 
 func (s *inMemoryDBStorage) Set(key Edge, value bool) error {

@@ -26,10 +26,10 @@ func (s UserJobPosition) MarshalJSON() ([]byte, error) {
 		Title     string `json:"title"`
 		CreatedAt int64  `json:"created_at"`
 	}{
-		ParentID:  s.ParentID.ToString(),
-		ID:        s.ID.ToString(),
-		UserID:    s.UserID.ToString(),
-		RegionID:  s.RegionID.ToString(),
+		ParentID:  s.ParentID.String(),
+		ID:        s.ID.String(),
+		UserID:    s.UserID.String(),
+		RegionID:  s.RegionID.String(),
 		Title:     s.Title,
 		CreatedAt: s.CreatedAt,
 	})

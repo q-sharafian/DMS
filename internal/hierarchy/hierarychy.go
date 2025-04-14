@@ -17,8 +17,12 @@ func NewHierarchyTree(graph *graph.DynamicGraph, logger l.Logger) *HierarchyTree
 	}
 }
 
-// Check if there's a path from ancestorID to nodeID
+// Check if there's a path from claimed ancestorID to nodeID.
+// If claimed ancestorID be "NilVertex", return true anyway.
 func (h *HierarchyTree) IsAncestor(ancestorID, nodeID graph.Vertex) (bool, error) {
+	if ancestorID.Equals(graph.NilVertex) {
+		return true, nil
+	}
 	return h.graph.HasPath(ancestorID, nodeID)
 }
 

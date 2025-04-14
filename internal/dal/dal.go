@@ -2,8 +2,10 @@ package dal
 
 import (
 	"DMS/internal/db"
+	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"encoding/json"
 	"fmt"
 )
 
@@ -81,14 +83,51 @@ type DAL struct {
 // Connect to the database and implement DAL for PostgreSQL. The first argument is
 // connection details of psql database.
 // If autoMigrate be true, run auto migration schema to database
-func NewPostgresDAL(ConnDetails db.PsqlConnDetails, logger l.Logger, autoMigrate bool) DAL {
+func NewPostgresDAL(ConnDetails db.PsqlConnDetails, cache InMemoryDAL, logger l.Logger, autoMigrate bool) DAL {
+	c := initCache(cache)
 	db := db.NewPsqlConn(&ConnDetails, autoMigrate, logger)
 	return DAL{
 		User:       newPsqlUserDAL(&db, logger),
-		Doc:        newPsqlDocDAL(&db, logger),
-		Event:      newPsqlEventDAL(&db, logger),
-		JP:         newPsqlJPDAL(&db, logger),
+		Doc:        newPsqlDocDAL(&db, c, logger),
+		Event:      newPsqlEventDAL(&db, c, logger),
+		JP:         newPsqlJPDAL(&db, c, logger),
 		Permission: newPsqlPermissionDAL(&db, logger),
 		Session:    newPsqlSessionDAL(&db, logger),
 	}
+}
+
+type cache struct {
+	cache InMemoryDAL
+}
+
+// Create a new cache
+func initCache(inMemoeyCache InMemoryDAL) *cache {
+	return &cache{inMemoeyCache}
+}
+
+// If such key doesn't exists, return "e.ErrNotFound" error
+func (c *cache) read(key string, dest any) error {
+	value, err := c.cache.Get(key)
+	if err != nil {
+		return err
+	} else if value == nil {
+		return e.ErrNotFound
+	}
+	err = json.Unmarshal([]byte(*value), dest)
+	if err != nil {
+		return fmt.Errorf("can't unmarshal the stored value in the cache: %s", err.Error())
+	}
+	return nil
+}
+
+func (c *cache) write(key string, value any) error {
+	stringVal, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %s", err.Error())
+	}
+	err = c.cache.Set(key, string(stringVal))
+	if err != nil {
+		return fmt.Errorf("faled to set key \"%s\" in the cache: %s", key, err.Error())
+	}
+	return nil
 }

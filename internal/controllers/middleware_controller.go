@@ -2,6 +2,7 @@ package controllers
 
 import (
 	l "DMS/internal/logger"
+	m "DMS/internal/models"
 	s "DMS/internal/services"
 	"strings"
 
@@ -26,7 +27,7 @@ func (h MiddlewareHttp) Authentication(c *gin.Context) {
 	jwt = strings.Replace(jwt, "Bearer ", "", 1)
 	jwt = strings.TrimSpace(jwt)
 
-	params, err := h.sessionService.ValidateSessionJWT(jwt)
+	params, err := h.sessionService.ValidateSessionJWT(m.Token(jwt))
 	if err == nil {
 		c.Set(authInfo, params)
 		c.Next()

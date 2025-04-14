@@ -62,7 +62,7 @@ func (d *psqlUserDAL) GetUserByID(id m.ID) (*m.User, error) {
 		return nil, result.Error
 	}
 	if result.RowsAffected < 1 {
-		return nil, fmt.Errorf("there's not any matched user with id %s", id.ToString())
+		return nil, fmt.Errorf("there's not any matched user with id %s", id.String())
 	}
 	return dbUser2ModelUser(&user), nil
 }
@@ -86,7 +86,7 @@ func (d *psqlUserDAL) IsDisabledByID(id m.ID) (bool, error) {
 	}
 	d.logger.Debugf("Number of rows found during checking if the user is disabled: %d\nfetched user: %+v", result.RowsAffected, user)
 	if result.RowsAffected < 1 {
-		return false, fmt.Errorf("there's not any matched user with id %s", id.ToString())
+		return false, fmt.Errorf("there's not any matched user with id %s", id.String())
 	}
 	return user.IsDisabled == db.IsDisabled, nil
 }

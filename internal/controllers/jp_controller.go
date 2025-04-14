@@ -43,14 +43,14 @@ func (h *JPHttp) CreateUserJP(c *gin.Context) {
 	id, err := h.jpService.CreateUserJP(&jp.JobPosition, &jp.Permission)
 	if err == nil {
 		successResp(c, MsgJPCreated, newIDResponse(*id))
-		h.logger.Debugf("Created job position with id %s successfully", id.ToString())
+		h.logger.Debugf("Created job position with id %s successfully", id.String())
 		return
 	}
 	switch code := err.GetCode(); code {
 	case s.SEDBError:
 		h.logger.Errorf("Failed to create job position (%s)", err.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
-	case s.InMemoryUpdateFailed:
+	case s.SEInMemoryUpdateFailed:
 		h.logger.Errorf("Failed to create job position (%s)", err.Error())
 		serverErrResp(c, MsgSuccessAction, MsgSomeActionsFailed)
 	case s.SENotFound:
@@ -82,7 +82,7 @@ func (h *JPHttp) CreateAdminJP(c *gin.Context) {
 	id, err := h.jpService.CreateAdminJP(&jp.JobPosition, &jp.Permission)
 	if err == nil {
 		successResp(c, MsgJPCreated, newIDResponse(*id))
-		h.logger.Debugf("Created job position with id %s successfully", id.ToString())
+		h.logger.Debugf("Created job position with id %s successfully", id.String())
 		return
 	}
 	switch code := err.GetCode(); code {
@@ -130,10 +130,10 @@ func (h *JPHttp) GetUserJPs(c *gin.Context) {
 	}
 	switch code := err2.GetCode(); code {
 	case s.SEDBError:
-		h.logger.Infof("Failed to get job positions for user %s (%s)", userID.ToString(), err2.Error())
+		h.logger.Infof("Failed to get job positions for user %s (%s)", userID.String(), err2.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	case s.SENotFound:
-		h.logger.Debugf("Failed to get job positions for user %s (%s)", userID.ToString(), err2.Error())
+		h.logger.Debugf("Failed to get job positions for user %s (%s)", userID.String(), err2.Error())
 		notFoundResp(c, MsgJPsNotFound, MsgCheckInfoAgain)
 	default:
 		h.logger.Panicf("Unexpected error code %d in GetUserJPs controller(%s)", code, err2.Error())

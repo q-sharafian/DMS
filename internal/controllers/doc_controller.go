@@ -46,7 +46,7 @@ func (h *DocHttp) CreateDoc(c *gin.Context) {
 
 	id, err := h.docService.CreateDoc(&doc, jwt.UserID)
 	if err == nil {
-		h.logger.Debugf("Created doc with id %s successfully", id.ToString())
+		h.logger.Debugf("Created doc with id %s successfully", id.String())
 		successResp(c, MsgDocCreated, newIDResponse(*id))
 		return
 	}
@@ -60,7 +60,7 @@ func (h *DocHttp) CreateDoc(c *gin.Context) {
 		notFoundResp(c, MsgAuthNotFound, MsgReferAdmin)
 	case s.SEEventOwnerMismatched:
 		h.logger.Debugf("The job position %s can't create a doc for the event %s: %s",
-			doc.CreatedBy.ToString(), doc.EventID.ToString(), err.Error())
+			doc.CreatedBy.String(), doc.EventID.String(), err.Error())
 		forbiddenErrResp(c, fmt.Sprintf(MsgCreationNotAllowC, MsgDocs), MsgEventOwnerMismatchedJP)
 	default:
 		h.logger.Panicf("Unexpected error code %d in CreateDoc controller: %s", code, err.Error())
@@ -104,23 +104,23 @@ func (h *DocHttp) GetNLastDocsByEventID(c *gin.Context) {
 		return
 	}
 
-	h.logger.Debugf("Getting last %d docs for event %s", *count, eventID.ToString())
+	h.logger.Debugf("Getting last %d docs for event %s", *count, eventID.String())
 	docs, err2 := h.docService.GetNLastDocByEventID(*eventID, jwt.UserID, nil, *jPID, int(*count))
 	if err2 == nil {
-		h.logger.Debugf("Got last %d docs for event %s successfully", *count, eventID.ToString())
+		h.logger.Debugf("Got last %d docs for event %s successfully", *count, eventID.String())
 		successResp(c, MsgSuccessAction, docs)
 		return
 	}
 	switch code := err2.GetCode(); code {
 	case s.SEDBError:
-		h.logger.Errorf("Failed to get docs for event %s (%s)", eventID.ToString(), err2.Error())
+		h.logger.Errorf("Failed to get docs for event %s (%s)", eventID.String(), err2.Error())
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	case s.JPNotMatchedUser:
 		h.logger.Debugf("Job position doesn't belong the user: %s", err2.Error())
 		forbiddenErrResp(c, MsgJPNotBelongsUser, MsgReferAdmin)
 	case s.SENotAncestor:
 		h.logger.Debugf("Job position with id %s is not ancestor of job position who created event with id %s: %s",
-			jPID.ToString(), eventID.ToString(), err2.Error())
+			jPID.String(), eventID.String(), err2.Error())
 		forbiddenErrResp(c, MsgNotPermission, MsgNotAncestor)
 	default:
 		h.logger.Panicf("Unexpected error code %d in GetNLastDocsByEventID controller: %s", code, err2.Error())

@@ -106,7 +106,7 @@ type idResponse struct {
 
 func newIDResponse(id m.ID) idResponse {
 	return idResponse{
-		ID: id.ToString(),
+		ID: id.String(),
 	}
 }
 func formatResponse(c *gin.Context, httpCode int, typeResp, msg string, details any) {

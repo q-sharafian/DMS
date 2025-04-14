@@ -46,13 +46,13 @@ func (p *psqlSessionDAL) DeleteSession(sessionID m.ID) (bool, error) {
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&sessionID)}}).
 		Delete(&db.Session{})
 	if result.Error != nil {
-		return false, fmt.Errorf("failed to delete session for sessionID %s (%s)", sessionID.ToString(), result.Error)
+		return false, fmt.Errorf("failed to delete session for sessionID %s (%s)", sessionID.String(), result.Error)
 	} else if result.RowsAffected < 1 {
 		return false, nil
 	} else if result.RowsAffected >= 1 {
 		return true, nil
 	}
-	p.logger.Panicf("Unpredicted behaviour in deleting session for sessionID %s (%s)", sessionID.ToString(), result.Error)
+	p.logger.Panicf("Unpredicted behaviour in deleting session for sessionID %s (%s)", sessionID.String(), result.Error)
 	return false, nil
 }
 
@@ -62,7 +62,7 @@ func (p *psqlSessionDAL) IsMatchSessionUserID(sessionID, claimedUserID m.ID) (bo
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&sessionID)}}).
 		Find(&session)
 	if result.Error != nil {
-		return false, fmt.Errorf("failed to get session by id %s (%s)", sessionID.ToString(), result.Error)
+		return false, fmt.Errorf("failed to get session by id %s (%s)", sessionID.String(), result.Error)
 	}
 	return session.UserID == *modelID2DBID(&claimedUserID), nil
 }
@@ -73,7 +73,7 @@ func (p *psqlSessionDAL) GetSessionByID(sessionID m.ID) (*m.Session, error) {
 		BaseModel: db.BaseModel{ID: *modelID2DBID(&sessionID)}}).
 		Unscoped().Find(&session)
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to get session by id %s (%s)", sessionID.ToString(), result.Error)
+		return nil, fmt.Errorf("failed to get session by id %s (%s)", sessionID.String(), result.Error)
 	} else if result.RowsAffected == 0 {
 		return nil, nil
 	}
