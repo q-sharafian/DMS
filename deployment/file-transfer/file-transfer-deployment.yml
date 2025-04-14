@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-transfer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-transfer
+  template:
+    metadata:
+      labels:
+        app: file-transfer
+    spec:
+      containers:
+        - name: file-transfer
+          image: ghcr.io/q-sharafian/file-transfer:latest # Use your image
+          envFrom:
+          - configMapRef:
+              name: file-transfer-config
+          - secretRef:
+              name: file-transfer-secret
+          ports:
+            - containerPort: 8081 # Your application's port
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+              ephemeral-storage: 0.5Gi
+            limits:
+              cpu: 100m
+              memory: 200Mi
+              ephemeral-storage: 0.5Gi
+      imagePullSecrets:
+        - name: registry-secret

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-transfer-config
+data:
+  # It could be development or production
+  APP_MODE: "production"
+  UPLOAD_PATH: "/upload"
+  DOWNLOAD_PATH: "/download"
+  SERVER_PORT: "8081"
+  # In seconds
+  DOWNLOAD_EXPIRE_TIME: "60"
+  # In seconds
+  UPLOAD_EXPIRE_TIME: "600"
+  AUTH_QUERY_MAX_TIME: "5" # In seconds
+  # minimum acceptable log level could be: "debug", "info", "warn", "error", "fatal", "panic"
+  MIN_LOG_LEVEL: "debug"
