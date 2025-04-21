@@ -24,6 +24,7 @@ func apiV1NeedAuth(router *gin.Engine, ctr c.HttpConrtoller) {
 	routerV1.Use(ctr.Middleware.Authentication)
 
 	routerV1.POST("/users", ctr.User.CreateUser)
+	routerV1.GET("/users", ctr.User.GetCurrentUserInfo)
 	routerV1.POST("/jps", ctr.JP.CreateUserJP)
 	routerV1.POST("/jps/admin", ctr.JP.CreateAdminJP)
 	routerV1.GET("/user/jps", ctr.JP.GetUserJPs)

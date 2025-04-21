@@ -83,3 +83,33 @@ func (h *UserHttp) CreateAdmin(c *gin.Context) {
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	}
 }
+
+// @Security BearerAuth
+// @Summary Get details of current user
+// @Description Get details of current user according to the authentication token.
+// @Tags user
+// @Success 200 {object} HttpResponse{details=models.User} "User details"
+// @Failure 500 {object} HttpResponse{details=string} "Server or database error"
+// @Failure 404 {object} HttpResponse{details=string} "User not found"
+// @Router /users/ [get]
+func (h *UserHttp) GetCurrentUserInfo(c *gin.Context) {
+	jwt := getJWT(c, h.logger)
+	if jwt == nil {
+		return
+	}
+	user, err := h.userService.GetUserByID(jwt.UserID)
+	if err == nil {
+		successResp(c, MsgSuccessfulLogin, user)
+		return
+	}
+	switch code := err.GetCode(); code {
+	case s.SEDBError:
+		h.logger.Errorf("Failed to get user info (%s)", err.Error())
+		serverErrResp(c, MsgServerError, MsgTryAgain)
+	case s.SENotFound:
+		unauthorizedResp(c, MsgAuthNotFound, MsgReferAdmin)
+	default:
+		h.logger.Panicf("Unexpected error %d: %s", code, err.Error())
+		serverErrResp(c, MsgServerError, MsgTryAgain)
+	}
+}

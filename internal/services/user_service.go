@@ -5,6 +5,8 @@ import (
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"errors"
+	"fmt"
 )
 
 type UserService interface {
@@ -16,6 +18,12 @@ type UserService interface {
 	//
 	// Note that users are persons that must always have created by another user.
 	CreateUser(name string, phone m.PhoneNumber, CreatedBy m.ID) (*m.ID, *e.Error)
+	// Get specified user details.
+	// TODO: Add the feature that just job-positions who have permission could read user details.
+	//
+	// Possible error codes the function could returns:
+	// DBError- SENotFound
+	GetUserByID(id m.ID) (*m.User, *e.Error)
 	// Create an andmin. Return id of created admin.
 	// Note that admins are persons that don't have created by anyperson.
 	//
@@ -80,6 +88,17 @@ func (s *sUserService) createPerson(name string, phone m.PhoneNumber, createdBy 
 	}
 
 	return newPersonID, nil
+}
+
+func (s *sUserService) GetUserByID(id m.ID) (*m.User, *e.Error) {
+	user, err := s.user.GetUserByID(id)
+	if err != nil {
+		if errors.Is(err, e.ErrNotFound) {
+			return nil, e.NewErrorP(fmt.Sprintf("not found any user with id %s: %s", id, err.Error()), SENotFound)
+		}
+		return nil, e.NewErrorP(err.Error(), SEDBError)
+	}
+	return user, nil
 }
 
 // Create an instance of sUserService struct

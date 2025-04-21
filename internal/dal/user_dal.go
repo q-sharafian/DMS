@@ -15,6 +15,7 @@ type UserDAL interface {
 	// If the user successfully created, return created user's id.
 	// If createdByID be nil, the user will be created as admin.
 	CreateUser(name string, phoneNumber m.PhoneNumber, createdByID *m.ID) (*m.ID, error)
+	// If not found any user, return ErrNotFound
 	GetUserByID(id m.ID) (*m.User, error)
 	// If both user and error be empty, means there's not any matched user.
 	GetUserByPhone(phoneNumber m.PhoneNumber) (*m.User, error)
@@ -62,7 +63,7 @@ func (d *psqlUserDAL) GetUserByID(id m.ID) (*m.User, error) {
 		return nil, result.Error
 	}
 	if result.RowsAffected < 1 {
-		return nil, fmt.Errorf("there's not any matched user with id %s", id.String())
+		return nil, e.ErrNotFound
 	}
 	return dbUser2ModelUser(&user), nil
 }
