@@ -12,6 +12,8 @@ import (
 // In general, it's better to return json as the details field of the response if
 // the response http code is 200.
 func SetupRouter(router *gin.Engine, ctr c.HttpConrtoller) {
+	router.Use(ctr.Middleware.Cors)
+
 	apiV1NeedAuth(router, ctr)
 	apiV1NeedNotAuth(router, ctr)
 
@@ -24,7 +26,7 @@ func apiV1NeedAuth(router *gin.Engine, ctr c.HttpConrtoller) {
 	routerV1.Use(ctr.Middleware.Authentication)
 
 	routerV1.POST("/users", ctr.User.CreateUser)
-	routerV1.GET("/users", ctr.User.GetCurrentUserInfo)
+	routerV1.GET("/users/current", ctr.User.GetCurrentUserInfo)
 	routerV1.POST("/jps", ctr.JP.CreateUserJP)
 	routerV1.POST("/jps/admin", ctr.JP.CreateAdminJP)
 	routerV1.GET("/user/jps", ctr.JP.GetUserJPs)

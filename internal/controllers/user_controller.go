@@ -85,13 +85,13 @@ func (h *UserHttp) CreateAdmin(c *gin.Context) {
 }
 
 // @Security BearerAuth
-// @Summary Get details of current user
+// @Summary Get details of the current user
 // @Description Get details of current user according to the authentication token.
 // @Tags user
 // @Success 200 {object} HttpResponse{details=models.User} "User details"
 // @Failure 500 {object} HttpResponse{details=string} "Server or database error"
 // @Failure 404 {object} HttpResponse{details=string} "User not found"
-// @Router /users/ [get]
+// @Router /users/current [get]
 func (h *UserHttp) GetCurrentUserInfo(c *gin.Context) {
 	jwt := getJWT(c, h.logger)
 	if jwt == nil {

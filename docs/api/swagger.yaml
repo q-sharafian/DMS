@@ -746,41 +746,6 @@ paths:
       tags:
       - job-position
   /users/:
-    get:
-      description: Get details of current user according to the authentication token.
-      responses:
-        "200":
-          description: User details
-          schema:
-            allOf:
-            - $ref: '#/definitions/controllers.HttpResponse'
-            - properties:
-                details:
-                  $ref: '#/definitions/models.User'
-              type: object
-        "404":
-          description: User not found
-          schema:
-            allOf:
-            - $ref: '#/definitions/controllers.HttpResponse'
-            - properties:
-                details:
-                  type: string
-              type: object
-        "500":
-          description: Server or database error
-          schema:
-            allOf:
-            - $ref: '#/definitions/controllers.HttpResponse'
-            - properties:
-                details:
-                  type: string
-              type: object
-      security:
-      - BearerAuth: []
-      summary: Get details of current user
-      tags:
-      - user
     post:
       consumes:
       - application/json
@@ -892,6 +857,42 @@ paths:
       security:
       - BearerAuth: []
       summary: Create admin
+      tags:
+      - user
+  /users/current:
+    get:
+      description: Get details of current user according to the authentication token.
+      responses:
+        "200":
+          description: User details
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  $ref: '#/definitions/models.User'
+              type: object
+        "404":
+          description: User not found
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get details of current user
       tags:
       - user
 securityDefinitions:
