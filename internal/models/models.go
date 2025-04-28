@@ -21,8 +21,9 @@ func (i *ID) StringP() string {
 	}
 	return uuid.UUID(*i).String()
 }
-func (i *ID) FromUUID(id uuid.UUID) {
+func (i *ID) FromUUID(id uuid.UUID) error {
 	*i = ID(id)
+	return nil
 }
 
 func (i *ID) FromString(id string) error {

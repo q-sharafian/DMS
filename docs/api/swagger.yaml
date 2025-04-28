@@ -125,6 +125,39 @@ definitions:
     - created_by
     - event_id
     type: object
+  models.DocWithEventName:
+    properties:
+      context:
+        example: some context
+        type: string
+      created_at:
+        description: The time the document is created. It's in UTC time zone and Unix
+          timestamp. (in seconds)
+        example: 1641011200
+        type: integer
+      created_by:
+        description: The id of job position who created the document
+        example: 54a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      event_id:
+        description: The id of event the document is for that
+        example: 32a79030f-0685-49d1-bbdd-31ab1b4c1613
+        type: string
+      event_name:
+        type: string
+      id:
+        example: 20354d7a-e4fe-47af-8ff6-187bca92f3f9
+        type: string
+      media_paths:
+        description: Contains path of multimedia files in the document. (If there's
+          in the document)
+        items:
+          $ref: '#/definitions/models.MediaPath'
+        type: array
+    required:
+    - created_by
+    - event_id
+    type: object
   models.Event:
     properties:
       created_at:
@@ -276,6 +309,75 @@ info:
   version: "1.0"
 paths:
   /docs:
+    get:
+      consumes:
+      - application/json
+      description: Get n last documents (according to the limit and offset values)
+        that are accessible for the user (and one of his job positions) who sent the
+        request. (If the job position is admin, he has access to all documents.) For
+        example, offset = 20 and limit = 10 would return 10 records (documents 21-30).
+      parameters:
+      - description: Number of documents to get. Maximum is 50
+        in: query
+        name: limit
+        type: integer
+      - description: Number of documents to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Job position id
+        in: query
+        name: jpid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Documents
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  items:
+                    $ref: '#/definitions/models.DocWithEventName'
+                  type: array
+              type: object
+        "401":
+          description: The user is not authorized
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "403":
+          description: Forbidden error. The user is not authorized to access this
+            resource, job position doesn't belongs to the user or etc.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get n last documents that are accessible for the user who sent the
+        request.
+      tags:
+      - document
     post:
       consumes:
       - application/json
@@ -538,7 +640,7 @@ paths:
       - BearerAuth: []
       summary: Get last documents
       tags:
-      - event
+      - document
   /jps/admin:
     post:
       description: Create a new job position for specified user. Each Admin job position
@@ -892,7 +994,7 @@ paths:
               type: object
       security:
       - BearerAuth: []
-      summary: Get details of current user
+      summary: Get details of the current user
       tags:
       - user
 securityDefinitions:

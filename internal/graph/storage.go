@@ -6,7 +6,7 @@ type Vertex []byte
 var NilVertex Vertex = Vertex([]byte("00000000"))
 
 func (v Vertex) Equals(other Vertex) bool     { return string(v) == string(other) }
-func (v Vertex) string() string               { return string(v) }
+func (v Vertex) String() string               { return string(v) }
 func (v Vertex) str2Vertex(str string) Vertex { return Vertex(str) }
 
 // Represents an Edge in directed graph. Start in the begining of the Edge, end is

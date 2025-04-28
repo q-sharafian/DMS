@@ -36,7 +36,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 	// Check cache first
 	if hasPath, err := g.cache.Get(pair); err != nil && !errors.Is(err, e.ErrNotFound) {
 		return false, fmt.Errorf("error in checking existing path from %s to %s: %s",
-			start.string(), end.string(), err.Error())
+			start.String(), end.String(), err.Error())
 	} else if err == nil {
 		return hasPath, nil
 	}
@@ -46,7 +46,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 	// Check cache again after acquiring write lock
 	if hasPath, err := g.cache.Get(pair); err != nil && !errors.Is(err, e.ErrNotFound) {
 		return false, fmt.Errorf("error in checking existing path from %s to %s: %s",
-			start.string(), end.string(), err.Error())
+			start.String(), end.String(), err.Error())
 	} else if err == nil {
 		return hasPath, nil
 	}
@@ -64,8 +64,8 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 			return true, nil
 		}
 
-		if _, seen := visited[vertex.string()]; !seen {
-			visited[vertex.string()] = struct{}{}
+		if _, seen := visited[vertex.String()]; !seen {
+			visited[vertex.String()] = struct{}{}
 			// Cache intermediate results
 			if vertex.Equals(start) {
 				if err := g.cache.Set(Edge{Start: start, End: vertex}, true); err != nil {
@@ -74,7 +74,7 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 			}
 
 			// Add unvisited neighbors to queue
-			if neighbors, exists := g.graph[vertex.string()]; exists {
+			if neighbors, exists := g.graph[vertex.String()]; exists {
 				for neighbor := range neighbors {
 					if _, seen := visited[neighbor]; !seen {
 						queue.PushBack(Vertex{}.str2Vertex(neighbor))
@@ -92,8 +92,8 @@ func (g *DynamicGraph) HasPath(start, end Vertex) (bool, error) {
 
 // addEdge adds a directed edge from u to v.
 func (g *DynamicGraph) addEdge(u, v Vertex) error {
-	u_str := u.string()
-	v_str := v.string()
+	u_str := u.String()
+	v_str := v.String()
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -112,8 +112,8 @@ func (g *DynamicGraph) addEdge(u, v Vertex) error {
 
 // removeEdge removes a directed edge from u to v
 func (g *DynamicGraph) removeEdge(u, v Vertex) error {
-	u_str := u.string()
-	v_str := v.string()
+	u_str := u.String()
+	v_str := v.String()
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -199,4 +199,47 @@ func (g *DynamicGraph) String() string {
 		}())
 	}
 	return strGraph
+}
+
+// GetAllNestedChildren returns a slice of vertices that includes the given vertex and
+// all its nested children.
+func (g *DynamicGraph) GetAllNestedChildren(vertex Vertex) []Vertex {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	var result []Vertex
+	queue := list.New()
+	visited := make(map[string]struct{})
+
+	vertexStr := vertex.String()
+	queue.PushBack(vertexStr)
+	visited[vertexStr] = struct{}{}
+
+	for queue.Len() > 0 {
+		current := queue.Remove(queue.Front()).(string)
+		result = append(result, Vertex{}.str2Vertex(current))
+
+		if neighbors, exists := g.graph[current]; exists {
+			for neighbor := range neighbors {
+				if _, seen := visited[neighbor]; !seen {
+					visited[neighbor] = struct{}{}
+					queue.PushBack(neighbor)
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func (g *DynamicGraph) GetParents(vertex Vertex) *[]Vertex {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	parents := make([]Vertex, 0)
+	for parent := range g.graph {
+		if _, exists := g.graph[parent][vertex.String()]; exists {
+			parents = append(parents, Vertex{}.str2Vertex(parent))
+		}
+	}
+	return &parents
 }

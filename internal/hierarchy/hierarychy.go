@@ -29,3 +29,14 @@ func (h *HierarchyTree) IsAncestor(ancestorID, nodeID graph.Vertex) (bool, error
 func (h *HierarchyTree) Graph() *graph.DynamicGraph {
 	return h.graph
 }
+
+// Get all nested children of the input vertex with the self vertex.
+func (h *HierarchyTree) GetNestedChilds(nodeID graph.Vertex) ([]graph.Vertex, error) {
+	return h.graph.GetAllNestedChildren(nodeID), nil
+}
+
+// Return true if the given vertex is a source vertex. Means it has no parents.
+func (h *HierarchyTree) IsSourceVertex(nodeID graph.Vertex) (bool, error) {
+	parents := h.graph.GetParents(nodeID)
+	return len(*parents) == 0, nil
+}

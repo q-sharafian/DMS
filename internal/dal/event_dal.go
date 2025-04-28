@@ -22,9 +22,9 @@ type EventDAL interface {
 	GetEventByID(eventID m.ID) (*m.Event, error)
 }
 
-const (
-	cacheKeyEventByID = "event:id:%s"
-)
+func (c cacheKey) eventByIDKey(eventID m.ID) string {
+	return fmt.Sprintf("event:id:%s", eventID.String())
+}
 
 // It's an implementaion of EventDAL interface
 type psqlEventDAL struct {
@@ -81,11 +81,12 @@ func (d *psqlEventDAL) GetAllCreatedEventsByJPID(jpID m.ID) (*[]m.Event, error) 
 
 // TODO: Test it with wrong id to know if it returns nil
 func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
-	var cacheKey = fmt.Sprintf(cacheKeyEventByID, eventID.String())
+	var cacheKey = ck.eventByIDKey(eventID)
 	var event m.Event
 	if err := d.cache.read(cacheKey, &event); err != nil && !errors.Is(err, e.ErrNotFound) {
 		d.logger.Debugf("Error in reading value of the key \"%s\" from the cache: %s", cacheKey, err.Error())
 	} else if err == nil {
+		d.logger.Debugf("Successfully read value of the key \"%s\" from the cache", cacheKey)
 		return &event, nil
 	}
 

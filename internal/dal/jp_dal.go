@@ -36,6 +36,10 @@ type JPDAL interface {
 	GetJPEdgeIter(limit int) common.Iterator[JPEdge]
 }
 
+func (c cacheKey) userHasJPKey(userID, jpID m.ID) string {
+	return fmt.Sprintf("user:%s:has-jp:%s", userID.String(), jpID.String())
+}
+
 type psqlJPDAL struct {
 	db     *db.PSQLDB
 	cache  *cache
@@ -175,14 +179,23 @@ func (d *psqlJPDAL) GetJPsByUser(user *m.User) (*[]m.UserJobPosition, error) {
 }
 
 func (d *psqlJPDAL) IsExistsUserWithJP(userID, jpID m.ID) (bool, error) {
+	cacheKey := ck.userHasJPKey(userID, jpID)
+	isExists := false
+	isSuccess := d.cache.get(cacheKey, &isExists)
+	if isSuccess {
+		return isExists, nil
+	}
+
 	var jp db.JobPosition
 	result := d.db.Where("user_id = ? AND id = ?", userID, jpID).Limit(1).Find(&jp)
 	if result.Error != nil {
 		return false, fmt.Errorf("failed to check if user with id %s has job position with id %s: %s",
 			userID.String(), jpID.String(), result.Error.Error())
 	} else if result.RowsAffected < 1 {
+		d.cache.set(cacheKey, false)
 		return false, nil
 	} else {
+		d.cache.set(cacheKey, true)
 		return true, nil
 	}
 }

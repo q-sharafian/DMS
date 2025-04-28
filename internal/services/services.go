@@ -6,6 +6,9 @@ import (
 	"DMS/internal/hierarchy"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type serviceErrorCode int
@@ -37,7 +40,7 @@ const (
 	// The entity deleted previously
 	SEDeletedPreviously = 11
 	// Claimed job position doesn't belong to the user
-	JPNotMatchedUser = 12
+	SEJPNotMatchedUser = 12
 	// Event not found
 	SEEventNotFound = 13
 	// Given job position is not owner of the event
@@ -125,4 +128,22 @@ func id2Vertex(id m.ID) graph.Vertex {
 		return graph.NilVertex
 	}
 	return graph.Vertex(id.String())
+}
+
+// If the vertex is NilVertex, return m.NilID.
+func vertex2ID(v graph.Vertex) (m.ID, error) {
+	if v.Equals(graph.NilVertex) {
+		return m.NilID, nil
+	}
+	u, err := uuid.Parse(v.String())
+	if err != nil {
+		return m.NilID, fmt.Errorf("invalid uuid %s: %s", v, err.Error())
+	}
+	id := m.ID{}
+	err = id.FromUUID(u)
+	if err == nil {
+		return id, nil
+	} else {
+		return m.NilID, err
+	}
 }

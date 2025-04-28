@@ -4,6 +4,10 @@ import (
 	"DMS/internal/db"
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
 )
 
 type DocDAL interface {
@@ -11,13 +15,18 @@ type DocDAL interface {
 	CreateDoc(doc *m.Doc) (*m.ID, error)
 	// Get n "last" docs by the event id.
 	GetNLastDocByEventID(eventID m.ID, n int) (*[]m.Doc, error)
-	// Get latest created document of event with event_id by user_id. Then return that
+	// Get some last docs (specified by offset and limit) created by the job position id
+	// If both result and error be nil, means that there are no docs created by the job position.
+	GetNLastDocsByJPID(jpID m.ID, offset, limit int) (*[]m.DocWithEventName, error)
+	// Return some last docs (specified by offset and limit)
+	GetNLastDocsWithEventName(limit, offset int) (*[]m.DocWithEventName, error)
+	// Get latest created documents of event with event_id by user_id. Then return that
 	// document together with the name of event and user.
 	GetLastEventDocByUserID(event_id m.ID, user_id m.ID) (doc *m.Doc, event_name string, user_name string, err error)
 }
 
 const (
-	cacheKeyUserByID = "doc:id:%s"
+	cacheKeyUserByID = "user:id:%s"
 )
 
 // It's an implementaion of DocDAL interface
@@ -60,6 +69,68 @@ func (d *psqlDocDAL) GetNLastDocByEventID(eventID m.ID, n int) (*[]m.Doc, error)
 	}
 
 	return dbDocs2modelDocs(docs, d.logger), nil
+}
+
+func (d *psqlDocDAL) GetNLastDocsByJPID(jpID m.ID, offset, limit int) (*[]m.DocWithEventName, error) {
+	// var docs *[]db.Doc
+	var docs []struct {
+		db.Doc
+		EventName string
+	}
+	result := d.db.Model(&db.Doc{}).
+		Select("docs.*, events.name as event_name").
+		Joins("INNER JOIN events ON docs.event_id = events.id").
+		Order("docs.created_at desc").Offset(offset).Limit(limit).Where(
+		&db.Doc{CreatedByID: *modelID2DBID(&jpID)},
+	).Find(&docs)
+	// result := d.db.Order("created_at desc").Offset(offset).Limit(limit).Where(
+	// 	&db.Doc{CreatedByID: *modelID2DBID(&jpID)},
+	// ).Find(&docs)
+
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get last %d with offset %d docs by jp-id %s: %s", limit, offset, jpID.String(), result.Error.Error())
+	}
+
+	modelDocs := make([]m.DocWithEventName, 0)
+	for _, doc := range docs {
+		modelDocs = append(modelDocs, m.DocWithEventName{
+			Doc:       *dbDoc2modelDoc(&doc.Doc, d.logger),
+			EventName: doc.EventName,
+		})
+	}
+	return &modelDocs, nil
+}
+
+func (d *psqlDocDAL) GetNLastDocsWithEventName(limit, offset int) (*[]m.DocWithEventName, error) {
+	// var docs []db.Doc
+	var docs []struct {
+		db.Doc
+		EventName string
+	}
+
+	result := d.db.Model(&db.Doc{}).
+		Select("docs.*, events.name as event_name").
+		Joins("INNER JOIN events ON docs.event_id = events.id").
+		Order("docs.created_at desc").Offset(offset).Limit(limit).Find(&docs)
+	// result := d.db.Order("created_at desc").Offset(offset).Limit(limit).Find(&docs)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get last %d with offset %d docs: %s", limit, limit, result.Error.Error())
+	}
+
+	modelDocs := make([]m.DocWithEventName, 0)
+	for _, doc := range docs {
+		modelDocs = append(modelDocs, m.DocWithEventName{
+			Doc:       *dbDoc2modelDoc(&doc.Doc, d.logger),
+			EventName: doc.EventName,
+		})
+	}
+	return &modelDocs, nil
 }
 
 func (d *psqlDocDAL) GetLastEventDocByUserID(event_id m.ID, user_id m.ID) (doc *m.Doc, event_name string, user_name string, err error) {

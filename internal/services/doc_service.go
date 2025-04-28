@@ -1,6 +1,7 @@
 package services
 
 import (
+	"DMS/internal/common"
 	"DMS/internal/dal"
 	e "DMS/internal/error"
 	l "DMS/internal/logger"
@@ -21,8 +22,14 @@ type DocService interface {
 	// database query. jpID is a job position id that belongs to the userID.
 	//
 	// Possible error codes:
-	// SEDBError- JPNotMatchedUser- SENotAncestor
+	// SEDBError- SEJPNotMatchedUser- SENotAncestor
 	GetNLastDocByEventID(eventID, userID m.ID, eventCreatedByID *m.ID, jpID m.ID, n int) (*[]m.Doc, *e.Error)
+	// Get some last documents (according to the limit and offset values) that are
+	// accessible for the job position. If the job position be admin, he access to all docs.
+	//
+	// Possible error codes:
+	// SEDBError- SEJPNotMatchedUser
+	GetNLastDocs(userID, claimedJPID m.ID, limit, offset uint64) (*[]m.DocWithEventName, *e.Error)
 }
 
 // It's a simple implementation of DocService interface.
@@ -91,6 +98,61 @@ func (s *sDocService) GetNLastDocByEventID(eventID, userID m.ID, eventCreatedByI
 		return nil, e.NewErrorP(err.Error(), SEDBError)
 	}
 	return docs, nil
+}
+
+func (s *sDocService) GetNLastDocs(userID, claimedJPID m.ID, limit, offset uint64) (*[]m.DocWithEventName, *e.Error) {
+	if isExistsUser, err := s.jp.IsExistsUserWithJP(userID, claimedJPID); err != nil {
+		return nil, e.NewErrorP("error in checking if user exists: %s", SEDBError, err.Error())
+	} else if !isExistsUser {
+		return nil, e.NewErrorP("there's not any user with id %s that have job position id %s",
+			SEJPNotMatchedUser, userID.String(), claimedJPID.String())
+	}
+
+	isAdmin, err2 := s.authorization.IsAdminJP(claimedJPID)
+	if err2 != nil {
+		return nil, e.NewErrorP("error in checking if the job position %s is admin: %s", SEDBError, claimedJPID.String(), err2.Error())
+	}
+	if isAdmin {
+		s.logger.Debugf("The job position %s is admin", claimedJPID.String())
+		docs, err := s.doc.GetNLastDocsWithEventName(int(limit), int(offset))
+		if err != nil {
+			return nil, e.NewErrorP("failed to get some last docs (limit: %d, offset: %d): %s", SEDBError, limit, offset, err.Error())
+		}
+		s.logger.Debugf("Got %d docs. (job position is admin)", len(*docs))
+		return docs, nil
+	}
+
+	childJPIDs, err2 := s.authorization.GetNestedChilds(claimedJPID)
+	if err2 != nil {
+		return nil, e.NewErrorP("can't fetch nested childs: %s", SEDBError, err2.Error())
+	} else {
+		s.logger.Debugf("Fetched %d child job positions", len(childJPIDs))
+		maxToShow := min(len(childJPIDs), 10)
+		s.logger.Debugf("%d nested job positions for specified job position %s: %+v",
+			maxToShow, claimedJPID, childJPIDs[:maxToShow])
+	}
+
+	docGroups := make([]*[]m.DocWithEventName, 0)
+	for _, childJPID := range childJPIDs {
+		// TODO: Optimize and edit the number of documents to fetch from each job position id
+		// such that improve performance.
+		docs, err := s.doc.GetNLastDocsByJPID(childJPID, int(offset), int(limit))
+		if err != nil {
+			return nil, e.NewErrorP("failed to get %s docs with offset %s for child job position: %s",
+				SEDBError, limit, offset, err.Error())
+		}
+		docGroups = append(docGroups, docs)
+	}
+
+	orderedDocs := common.MergeOrderedGroups(&docGroups, func(a, b m.DocWithEventName) bool {
+		return a.CreatedAt < b.CreatedAt
+	})
+	if len(*orderedDocs) < int(limit) {
+		return orderedDocs, nil
+	} else {
+		limitedDocs := (*orderedDocs)[:limit]
+		return &limitedDocs, nil
+	}
 }
 
 // Create an instance of sDocService struct

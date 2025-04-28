@@ -21,6 +21,122 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/docs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get n last documents (according to the limit and offset values) that are accessible for the user (and one of his job positions) who sent the request. (If the job position is admin, he has access to all documents.) For example, offset = 20 and limit = 10 would return 10 records (documents 21-30).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "document"
+                ],
+                "summary": "Get n last documents that are accessible for the user who sent the request.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of documents to get. Maximum is 50",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of documents to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Job position id",
+                        "name": "jpid",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documents",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.DocWithEventName"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "The user is not authorized",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden error. The user is not authorized to access this resource, job position doesn't belongs to the user or etc.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -461,7 +577,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "event"
+                    "document"
                 ],
                 "summary": "Get last documents",
                 "parameters": [
@@ -1114,7 +1230,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Get details of current user",
+                "summary": "Get details of the current user",
                 "responses": {
                     "200": {
                         "description": "User details",
@@ -1324,6 +1440,48 @@ const docTemplate = `{
                     "description": "The id of event the document is for that",
                     "type": "string",
                     "example": "32a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "20354d7a-e4fe-47af-8ff6-187bca92f3f9"
+                },
+                "media_paths": {
+                    "description": "Contains path of multimedia files in the document. (If there's in the document)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MediaPath"
+                    }
+                }
+            }
+        },
+        "models.DocWithEventName": {
+            "type": "object",
+            "required": [
+                "created_by",
+                "event_id"
+            ],
+            "properties": {
+                "context": {
+                    "type": "string",
+                    "example": "some context"
+                },
+                "created_at": {
+                    "description": "The time the document is created. It's in UTC time zone and Unix timestamp. (in seconds)",
+                    "type": "integer",
+                    "example": 1641011200
+                },
+                "created_by": {
+                    "description": "The id of job position who created the document",
+                    "type": "string",
+                    "example": "54a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "event_id": {
+                    "description": "The id of event the document is for that",
+                    "type": "string",
+                    "example": "32a79030f-0685-49d1-bbdd-31ab1b4c1613"
+                },
+                "event_name": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string",

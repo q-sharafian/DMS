@@ -20,6 +20,16 @@ type AuthorizationService interface {
 	// Possible error codes:
 	// SEDBError
 	GetJPPermissions(jpID m.ID) (*m.Permission, *e.Error)
+	// List of all nested child job positions of the given job position.
+	//
+	// Possible error codes:
+	// SEDBError
+	GetNestedChilds(jpID m.ID) ([]m.ID, *e.Error)
+	// Return true if the given job position is an admin job position.
+	//
+	// Possible error codes:
+	// SEDBError
+	IsAdminJP(jpID m.ID) (bool, *e.Error)
 }
 
 // It's a simple implementation of AuthorizationService interface.
@@ -56,4 +66,32 @@ func (s *sAuthorizationService) GetJPPermissions(jpID m.ID) (*m.Permission, *e.E
 		return nil, e.NewErrorP(err.Error(), SEDBError)
 	}
 	return permission, nil
+}
+
+func (s *sAuthorizationService) GetNestedChilds(jpID m.ID) ([]m.ID, *e.Error) {
+	nestedChilds, err := s.hierarchy.GetNestedChilds(id2Vertex(jpID))
+	if err != nil {
+		return nil, e.NewErrorP(err.Error(), SEDBError)
+	}
+
+	childs := make([]m.ID, 0)
+	for _, vertex := range nestedChilds {
+		id, err := vertex2ID(vertex)
+		if err != nil {
+			return nil, e.NewErrorP("failed to convert vertex %s to id: %s", SEDBError, vertex.String(), err.Error())
+		}
+		if id != m.NilID {
+			childs = append(childs, id)
+		}
+	}
+	return childs, nil
+}
+
+func (s *sAuthorizationService) IsAdminJP(jpID m.ID) (bool, *e.Error) {
+	result, err := s.hierarchy.IsSourceVertex(id2Vertex(jpID))
+	if err != nil {
+		return false, e.NewErrorP("failed to check if job position id %s is admin: %s",
+			SEDBError, jpID.String(), err.Error())
+	}
+	return result, nil
 }

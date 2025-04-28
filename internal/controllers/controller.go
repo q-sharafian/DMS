@@ -61,6 +61,7 @@ func NewHttpController(services s.Service, logger l.Logger) HttpConrtoller {
 const (
 	MsgBadJsonStruct            = "ساختار داده ورودی اشتباه است"
 	MsgBadValue                 = "مقدار ورودی اشتباه است"
+	MsgParsingErrorC            = "خطایی در هنگام تجزیه رخ داد: %s"
 	MsgParsingError             = "خطایی در هنگام تجزیه رخ داد"
 	MsgServerError              = "خطایی در سمت سرور رخ داد"
 	MsgDisabledUserC            = "کاربر %s غیر فعال شده است"
@@ -96,6 +97,13 @@ const (
 	MsgSomeActionsFailed        = "خطایی در برخی بخش‌ها رخ داده است"
 )
 
+// hC = http code
+const (
+	hCDBError          = http.StatusInternalServerError
+	hCJPNotMatchedUser = http.StatusForbidden
+	hCBadValue         = http.StatusBadRequest
+	hCParsingError     = http.StatusBadRequest
+)
 const authInfo = "AuthInfo"
 
 // It's used to response just an id to the client
@@ -161,6 +169,10 @@ func conflictErrResp(c *gin.Context, message string, details any) {
 // Return a JSON response with HTTP code 401 to the client
 func unauthorizedResp(c *gin.Context, message string, details any) {
 	formatResponse(c, http.StatusUnauthorized, "error", message, details)
+}
+
+func customErrResp(c *gin.Context, httpCode int, message string, details any) {
+	formatResponse(c, httpCode, "error", message, details)
 }
 
 // Try to parse and validate input object with V10 and return error if it's not valid.
@@ -268,7 +280,10 @@ func newQueryParser(c *gin.Context, logger l.Logger) *queryParser {
 	}
 }
 
-// @Refer to ParseUInt for more details
+// ParseID parses the input HTTP query parameter specified by queryKey into an ID type.
+// If the parameter is missing or cannot be parsed, it returns the defaultValue if provided.
+// Otherwise, it logs the parsing error and returns an error. If the input is invalid
+// and no default value is provided, it sends an HTTP bad request response.
 func (p *queryParser) ParseID(queryKey string, defaultValue *m.ID) (*m.ID, error) {
 	param, ok := p.c.GetQuery(queryKey)
 	if !ok {

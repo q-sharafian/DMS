@@ -206,19 +206,6 @@ func (s *sSessionService) UpdateSession(session *m.Session) *e.Error {
 	panic("UpdateSessionExp doesn't implemented")
 }
 
-// Validate Issued At Timestamp and Expiration timestamp
-func validateJWTTime(iat, exp int64) error {
-	issuedAt := time.Unix(iat, 0)
-	if time.Now().UTC().Before(issuedAt) {
-		return fmt.Errorf("IAT token issued in the future. IAT represents %s", issuedAt.Format(time.RFC3339))
-	}
-	expiredAt := time.Unix(exp, 0)
-	if time.Now().UTC().After(expiredAt) {
-		return fmt.Errorf("EXP token expired. EXP represents %s", expiredAt.Format(time.RFC3339))
-	}
-	return nil
-}
-
 func (s *sSessionService) GetSessionByID(sessionID *m.ID) (*m.Session, *e.Error) {
 	session, err := s.session.GetSessionByID(*sessionID)
 	if err != nil {

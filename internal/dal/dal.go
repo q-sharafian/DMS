@@ -6,6 +6,7 @@ import (
 	l "DMS/internal/logger"
 	m "DMS/internal/models"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -84,7 +85,7 @@ type DAL struct {
 // connection details of psql database.
 // If autoMigrate be true, run auto migration schema to database
 func NewPostgresDAL(ConnDetails db.PsqlConnDetails, cache InMemoryDAL, logger l.Logger, autoMigrate bool) DAL {
-	c := initCache(cache)
+	c := initCache(cache, logger)
 	db := db.NewPsqlConn(&ConnDetails, autoMigrate, logger)
 	return DAL{
 		User:       newPsqlUserDAL(&db, logger),
@@ -96,13 +97,19 @@ func NewPostgresDAL(ConnDetails db.PsqlConnDetails, cache InMemoryDAL, logger l.
 	}
 }
 
+// Store list of all cache key formatters
+type cacheKey struct{}
+
+var ck = cacheKey{}
+
 type cache struct {
-	cache InMemoryDAL
+	cache  InMemoryDAL
+	logger l.Logger
 }
 
 // Create a new cache
-func initCache(inMemoeyCache InMemoryDAL) *cache {
-	return &cache{inMemoeyCache}
+func initCache(inMemoeyCache InMemoryDAL, logger l.Logger) *cache {
+	return &cache{inMemoeyCache, logger}
 }
 
 // If such key doesn't exists, return "e.ErrNotFound" error
@@ -120,6 +127,29 @@ func (c *cache) read(key string, dest any) error {
 	return nil
 }
 
+// Get the value of the key. If an error occurred or such key doesn't exists, handle
+// it internally and just return false. Otherwise, return true. Note that pass a pointer as dest.
+//
+// Example:
+//
+//	cacheKey := ck.userHasJPKey(userID, jpID)
+//	isExists := false
+//	isSuccess := d.cache.get(cacheKey, &isExists)
+//	if isSuccess {
+//	  return isExists, nil
+//	}
+func (c *cache) get(key string, dest any) bool {
+	if err := c.read(key, &dest); err != nil && !errors.Is(err, e.ErrNotFound) {
+		c.logger.Debugf("Error in reading value of the key \"%s\" from the cache: %s", key, err.Error())
+		return false
+	} else if err == nil {
+		c.logger.Debugf("Successfully read value of the key \"%s\" from the cache", key)
+		return true
+	} else {
+		return false
+	}
+}
+
 func (c *cache) write(key string, value any) error {
 	stringVal, err := json.Marshal(value)
 	if err != nil {
@@ -130,4 +160,15 @@ func (c *cache) write(key string, value any) error {
 		return fmt.Errorf("faled to set key \"%s\" in the cache: %s", key, err.Error())
 	}
 	return nil
+}
+
+// Set the value of the key. If set successfully, return true, otherwise return false.
+// If an error occurs, the method will handle it itself.
+func (c *cache) set(key string, value any) bool {
+	if err := c.write(key, value); err != nil {
+		c.logger.Errorf("Can't write an entity with key \"%s\" to cache: %s", key, err.Error())
+		return false
+	}
+	c.logger.Debugf("Successfully write an entity with key \"%s\" to cache", key)
+	return true
 }
