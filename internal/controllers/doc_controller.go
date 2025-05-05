@@ -137,7 +137,7 @@ func (h *DocHttp) GetNLastDocsByEventID(c *gin.Context) {
 // @Param limit query int false "Number of documents to get. Maximum is 50"
 // @Param offset query int false "Number of documents to skip"
 // @Param jpid query string true "Job position id"
-// @Success 200 {object} HttpResponse{details=[]models.DocWithEventName} "Documents"
+// @Success 200 {object} HttpResponse{details=[]models.DocWithSomeDetails} "Documents"
 // @Failure 500 {object} HttpResponse{details=string} "Server or database error"
 // @Failure 403 {object} HttpResponse{details=string} "Forbidden error. The user is not authorized to access this resource, job position doesn't belongs to the user or etc."
 // @Failure 401 {object} HttpResponse{details=string} "The user is not authorized"
@@ -153,16 +153,19 @@ func (h *DocHttp) GetNLastDocs(c *gin.Context) {
 	} else if *limit < 1 {
 		*limit = 1
 	}
+
 	offsetDefaultValue := uint64(0)
 	offset, _ := queryParser.ParseUInt("offset", &offsetDefaultValue)
 	jwt := getJWT(c, h.logger)
 	if jwt == nil {
 		return
 	}
-
 	jpID, err := queryParser.ParseID("jpid", nil)
 	if err != nil {
 		h.logger.Debugf("Error in parsing jpid: %s", err.Error())
+		return
+	} else if jpID.IsNil() {
+		customErrResp(c, hCBadValue, MsgBadValue, fmt.Sprintf(MsgRequiredValueC, MsgJP))
 		return
 	}
 

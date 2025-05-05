@@ -97,8 +97,8 @@ func NewService(dal *dal.DAL, hierarchy *hierarchy.HierarchyTree, cache dal.InMe
 
 	session := newSSessionService(dal.Session, dal.User, logger)
 	jp := newSJPService(dal.JP, hierarchy, logger)
-	event := newSEventService(dal.Event, jp, logger)
 	authorization := newSAuthorizationService(*hierarchy, dal.Permission, logger)
+	event := newSEventService(dal.Event, jp, authorization, logger)
 	filePermission := newSFilePermissionService(cache, session, dal.Event, authorization, logger)
 	s := Service{
 		Doc:           newSDocService(dal.Doc, authorization, event, jp, logger),

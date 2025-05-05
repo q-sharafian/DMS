@@ -21,24 +21,6 @@ type MediaPath struct {
 	FileName string `json:"file_name"`
 }
 
-// func (s Doc) MarshalJSON() ([]byte, error) {
-// 	return json.Marshal(&struct {
-// 		ID        string      `json:"id"`
-// 		CreatedBy string      `json:"created_by"`
-// 		EventID   string      `json:"event_id"`
-// 		Context   *string     `json:"context"`
-// 		Paths     []MediaPath `json:"media_paths"`
-// 		CreatedAt int64       `json:"created_at"`
-// 	}{
-// 		ID:        s.ID.String(),
-// 		CreatedBy: s.CreatedBy.String(),
-// 		EventID:   s.EventID.String(),
-// 		Context:   s.Context,
-// 		Paths:     s.Paths,
-// 		CreatedAt: s.CreatedAt,
-// 	})
-// }
-
 type MediaType uint8
 
 const (
@@ -47,8 +29,9 @@ const (
 	MediaAudio
 )
 
-// Contains doc details with its event name
-type DocWithEventName struct {
+// Contains doc details with some additional related details
+type DocWithSomeDetails struct {
 	Doc
 	EventName string `json:"event_name"`
+	JPName    string `json:"jp_name"`
 }

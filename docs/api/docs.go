@@ -73,7 +73,7 @@ const docTemplate = `{
                                         "details": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/models.DocWithEventName"
+                                                "$ref": "#/definitions/models.DocWithSomeDetails"
                                             }
                                         }
                                     }
@@ -260,6 +260,104 @@ const docTemplate = `{
             }
         },
         "/events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get last N events by job position id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "event"
+                ],
+                "summary": "Get last N events by job position id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job position id",
+                        "name": "jpid",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of events to fetch. Default is 40. Max is 100. if limit be equals 0, then return all events from offset to the end.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset of events to fetch. Default is 0.",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success fetching events",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/models.Event"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Jon position doesn't belong to current user.",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Server or database error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/controllers.HttpResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1454,7 +1552,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.DocWithEventName": {
+        "models.DocWithSomeDetails": {
             "type": "object",
             "required": [
                 "created_by",
@@ -1486,6 +1584,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "20354d7a-e4fe-47af-8ff6-187bca92f3f9"
+                },
+                "jp_name": {
+                    "type": "string"
                 },
                 "media_paths": {
                     "description": "Contains path of multimedia files in the document. (If there's in the document)",

@@ -61,3 +61,61 @@ func (h *EventHttp) CreateEvent(c *gin.Context) {
 		serverErrResp(c, MsgServerError, MsgTryAgain)
 	}
 }
+
+// @Security BearerAuth
+// @Summary Get last N events by job position id
+// @Description Get last N events by job position id.
+// @Tags event
+// @Accept json
+// @Produce json
+// @Param jpid query string true "Job position id"
+// @Param limit query int false "Limit of events to fetch. Default is 40. Max is 100. if limit be equals 0, then return all events from offset to the end."
+// @Param offset query int false "Offset of events to fetch. Default is 0."
+// @Success 200 {object} HttpResponse{details=[]models.Event} "Success fetching events"
+// @Failure 500 {object} HttpResponse{details=string} "Server or database error"
+// @Failure 403 {object} HttpResponse{details=string} "Jon position doesn't belong to current user."
+// @Router /events [get]
+func (h *EventHttp) GetNLastEventsByJPID(c *gin.Context) {
+	queryParser := newQueryParser(c, h.logger)
+	limitDefaultValue := uint64(40)
+	limit, _ := queryParser.ParseUInt("limit", &limitDefaultValue)
+	maxLimit := uint64(100)
+	if *limit > maxLimit {
+		*limit = maxLimit
+	}
+	offsetDefaultValue := uint64(0)
+	offset, _ := queryParser.ParseUInt("offset", &offsetDefaultValue)
+	jwt := getJWT(c, h.logger)
+	if jwt == nil {
+		return
+	}
+	jpID, err := queryParser.ParseID("jpid", nil)
+	if err != nil {
+		h.logger.Debugf("Failed to parse job position id: %s", err.Error())
+		// customErrResp(c, hCBadValue, MsgBadValue, fmt.Sprintf(MsgIsNotValidC, MsgJP))
+		return
+	} else if jpID.IsNil() {
+		customErrResp(c, hCBadValue, MsgBadValue, fmt.Sprintf(MsgRequiredValueC, MsgJP))
+		return
+	}
+
+	events, err2 := h.eventService.GetNLastEventsByJPID(jwt.UserID, *jpID, *limit, *offset)
+	if err2 == nil {
+		h.logger.Debugf("Fetched %d events for job position id %s. (limit: %d, offset: %d)",
+			len(*events), jpID.String(), *limit, *offset)
+		successResp(c, MsgSuccessAction, events)
+		return
+	}
+
+	switch code := err2.GetCode(); code {
+	case s.SEDBError:
+		h.logger.Errorf("Failed to fetch events (%s)", err2.Error())
+		customErrResp(c, hCDBError, MsgServerError, MsgTryAgain)
+	case s.SEJPNotMatchedUser:
+		h.logger.Debugf("Failed to fetch events: %s", err2.Error())
+		customErrResp(c, hCJPNotMatchedUser, fmt.Sprintf(MsgNotFoundC, MsgJP), MsgCheckInfoAgain)
+	default:
+		h.logger.Panicf("Unexpected error code %d (%s)", code, err2.Error())
+		customErrResp(c, hcUnexpectedError, MsgServerError, MsgTryAgain)
+	}
+}

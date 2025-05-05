@@ -12,14 +12,17 @@ import (
 type EventDAL interface {
 	// Create event and return its id.
 	CreateEvent(event *m.Event) (*m.ID, error)
-	// Return n last events by job position id.
-	GetNLastEventsByJPID(jPID m.ID, n int) (*[]m.Event, error)
+	// Return some last events created by the job position id.
+	// If limit be equals -1, then return all events from offset to the end.
+	GetNLastEventsByJPID(jPID m.ID, limit, offset int) (*[]m.Event, error)
 	GetLastApprovedEventByUserID(id m.ID) (*m.Event, *m.ApprovedEvent, error)
 	// Return all created events by job position id.
 	GetAllCreatedEventsByJPID(jPID m.ID) (*[]m.Event, error)
 	// Return event by its id. If no error occurs and the returned event is nil, then
 	// there is no corresponding event with that id.
 	GetEventByID(eventID m.ID) (*m.Event, error)
+	// Return some last events (specified by offset and limit)
+	GetNLastEvents(limit, offset int) (*[]m.Event, error)
 }
 
 func (c cacheKey) eventByIDKey(eventID m.ID) string {
@@ -56,15 +59,14 @@ func (d *psqlEventDAL) CreateEvent(event *m.Event) (*m.ID, error) {
 	return dbID2ModelID(&newEvent.ID), nil
 }
 
-// If n be equals -1, then return all events
-func (d *psqlEventDAL) GetNLastEventsByJPID(jPID m.ID, n int) (*[]m.Event, error) {
+func (d *psqlEventDAL) GetNLastEventsByJPID(jPID m.ID, limit, offset int) (*[]m.Event, error) {
 	var events *[]db.Event
-	result := d.db.Order("created_at desc").Limit(n).Where(&db.Event{
+	result := d.db.Order("created_at desc").Limit(int(limit)).Offset(int(offset)).Where(&db.Event{
 		CreatedByID: *modelID2DBID(&jPID),
 	}).Find(&events)
 
 	if result.Error != nil {
-		d.logger.Debugf("Failed to get %s events for job-position-id %d (%s)", n, jPID.String(), result.Error.Error())
+		d.logger.Debugf("Failed to get %s events for job-position-id %d (%s)", limit, jPID.String(), result.Error.Error())
 		return nil, result.Error
 	}
 	return dbEvents2ModelEvents(events), nil
@@ -76,7 +78,7 @@ func (d *psqlEventDAL) GetLastApprovedEventByUserID(id m.ID) (*m.Event, *m.Appro
 }
 
 func (d *psqlEventDAL) GetAllCreatedEventsByJPID(jpID m.ID) (*[]m.Event, error) {
-	return d.GetNLastEventsByJPID(jpID, -1)
+	return d.GetNLastEventsByJPID(jpID, -1, 0)
 }
 
 // TODO: Test it with wrong id to know if it returns nil
@@ -102,6 +104,16 @@ func (d *psqlEventDAL) GetEventByID(eventID m.ID) (*m.Event, error) {
 		d.logger.Debugf("Can't write an entity with key \"%s\" to cache: %s", cacheKey, err.Error())
 	}
 	return &event, nil
+}
+
+func (d *psqlEventDAL) GetNLastEvents(limit, offset int) (*[]m.Event, error) {
+	var events *[]db.Event
+	result := d.db.Order("created_at desc").Offset(offset).Limit(limit).Find(&events)
+	if result.Error != nil {
+		d.logger.Debugf("Failed to get %s events (%s)", limit, result.Error.Error())
+		return nil, result.Error
+	}
+	return dbEvents2ModelEvents(events), nil
 }
 
 func dbEvent2ModelEvent(event *db.Event) *m.Event {

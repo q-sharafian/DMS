@@ -125,7 +125,7 @@ definitions:
     - created_by
     - event_id
     type: object
-  models.DocWithEventName:
+  models.DocWithSomeDetails:
     properties:
       context:
         example: some context
@@ -147,6 +147,8 @@ definitions:
         type: string
       id:
         example: 20354d7a-e4fe-47af-8ff6-187bca92f3f9
+        type: string
+      jp_name:
         type: string
       media_paths:
         description: Contains path of multimedia files in the document. (If there's
@@ -341,7 +343,7 @@ paths:
             - properties:
                 details:
                   items:
-                    $ref: '#/definitions/models.DocWithEventName'
+                    $ref: '#/definitions/models.DocWithSomeDetails'
                   type: array
               type: object
         "401":
@@ -445,6 +447,62 @@ paths:
       tags:
       - document
   /events:
+    get:
+      consumes:
+      - application/json
+      description: Get last N events by job position id.
+      parameters:
+      - description: Job position id
+        in: query
+        name: jpid
+        required: true
+        type: string
+      - description: Limit of events to fetch. Default is 40. Max is 100. if limit
+          be equals 0, then return all events from offset to the end.
+        in: query
+        name: limit
+        type: integer
+      - description: Offset of events to fetch. Default is 0.
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success fetching events
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  items:
+                    $ref: '#/definitions/models.Event'
+                  type: array
+              type: object
+        "403":
+          description: Jon position doesn't belong to current user.
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+        "500":
+          description: Server or database error
+          schema:
+            allOf:
+            - $ref: '#/definitions/controllers.HttpResponse'
+            - properties:
+                details:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get last N events by job position id
+      tags:
+      - event
     post:
       consumes:
       - application/json

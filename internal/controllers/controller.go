@@ -86,7 +86,7 @@ const (
 	MsgDeletedSessionPreviously = "جلسه از قبل غیر فعال شده است"
 	MsgJPsNotFound              = "سمت شغلی یافت نشد"
 	MsgCheckInfoAgain           = "لطفا مشخصات را مجددا بررسی کنید"
-	MsgNotFoundC                = "مورد مورد نظر یافت نشد %s"
+	MsgNotFoundC                = "%s مورد نظر یافت نشد"
 	MsgJP                       = "سمت شغلی"
 	MsgDocs                     = "مستندات"
 	MsgCreationNotAllowC        = "ایجاد %s برای شما مجاز نیست"
@@ -95,10 +95,14 @@ const (
 	MsgNotAncestor              = "عنوان شغلی جاری، پایین تر از عوان شغلی مورد نظر است"
 	MsgNotPermission            = "مجوز دسترسی ندارید"
 	MsgSomeActionsFailed        = "خطایی در برخی بخش‌ها رخ داده است"
+	MsgRequiredValueC           = "مقدار %s الزامی است"
+	MsgIsNotValidC              = "مقدار %s اشتباه است"
 )
 
 // hC = http code
 const (
+	// Means errors that unexpected and not handled by the system.
+	hcUnexpectedError  = http.StatusInternalServerError
 	hCDBError          = http.StatusInternalServerError
 	hCJPNotMatchedUser = http.StatusForbidden
 	hCBadValue         = http.StatusBadRequest
@@ -284,6 +288,7 @@ func newQueryParser(c *gin.Context, logger l.Logger) *queryParser {
 // If the parameter is missing or cannot be parsed, it returns the defaultValue if provided.
 // Otherwise, it logs the parsing error and returns an error. If the input is invalid
 // and no default value is provided, it sends an HTTP bad request response.
+// If ID be empty, return NilID.
 func (p *queryParser) ParseID(queryKey string, defaultValue *m.ID) (*m.ID, error) {
 	param, ok := p.c.GetQuery(queryKey)
 	if !ok {
